@@ -6,7 +6,7 @@ import string as str
 #print(cwd)
 
 dna={}
-with open('../Arabidopsis/TAIR10/test.fa','r') as fa:
+with open('../Arabidopsis/TAIR10/TAIR10_chr1-5.fas','r') as fa:
     for line in fa.readlines():
         line=line.rstrip('\n')
         if re.compile(r'^>').search(line): #染色体番号を取得
@@ -60,16 +60,16 @@ for k, v in CDS.items():
         chr=m.group(1)
         start=int(m.group(2))-1
         end=int(m.group(3))
-        dna=dna[chr]
-        seq.append(dna[start:end])
+        contig=dna[chr]
+        seq.append(contig[start:end])
 
     tmp=k.split(',')
     if tmp[1] == '+':
         nucl=''.join(seq)
     else:
-        nucl=''.join(seq.reverse())
-        nucl=reversed(seq)
-        nucl=seq.translate(str.maketrans('ATGC', 'TACG'))
+        nucl=''.join(reversed(seq))
+        nucl=nucl[::-1]
+        nucl=nucl.translate(nucl.maketrans('ATGC', 'TACG'))
 
     for i in range(0,int(len(nucl)/3)):
         triple=nucl[3*i:3*i+3]
@@ -78,9 +78,3 @@ for k, v in CDS.items():
         else:
             print ("Z")
     print('\n')
-
-
-
-
-
-
