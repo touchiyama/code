@@ -1,6 +1,7 @@
 # %%
 import numpy as np
 import csv
+from numpy.core.fromnumeric import mean
 import pandas as pd
 import matplotlib.pyplot as plt
 #import pyper
@@ -81,3 +82,19 @@ plt.ylabel("prob")
 plt.legend()
 plt.show()
 # %%
+#パラメータの最尤推定
+import scipy.stats as st
+
+x=np.arange(2,5,0.1)
+logL=[sum(st.poisson.logpmf(data,i)) for i in x]
+plt.plot(x,logL)
+plt.axvline(x=x[np.argmax(logL)])
+plt.axhline(y=max(logL))
+plt.xlabel("lambda")
+plt.ylabel("logL")
+plt.show()
+
+print(f"lambda={x[np.argmax(logL)]}")
+print(f"logL={max(logL)}")
+
+print(data.mean())
