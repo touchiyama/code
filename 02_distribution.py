@@ -81,6 +81,7 @@ plt.xlabel("data")
 plt.ylabel("prob")
 plt.legend()
 plt.show()
+
 # %%
 #パラメータの最尤推定
 import scipy.stats as st
