@@ -24,9 +24,9 @@ p1=[st.binom.pmf(i,8,0.1) for i in x]
 p2=[st.binom.pmf(i,8,0.3) for i in x]
 p3=[st.binom.pmf(i,8,0.8) for i in x]
 
-plt.plot(x,p1,label="q=0.1",marker="o",linestyle='--')
-plt.plot(x,p2,label="q=0.3",marker="x",linestyle='--')
-plt.plot(x,p3,label="q=0.8",marker="^",linestyle='--')
+plt.plot(x,p1,label="q=0.1",marker="o",linestyle="--")
+plt.plot(x,p2,label="q=0.3",marker="x",linestyle="--")
+plt.plot(x,p3,label="q=0.8",marker="^",linestyle="--")
 plt.legend(loc="upper right")
 plt.ylabel("p(y|8,q)")
 plt.xlabel("y")
@@ -42,6 +42,7 @@ def logistic(z):
 
 x=np.arange(-6,6,0.1)
 plt.plot(x,logistic(x))
+
 # %%
 
 #生存確率q=1/1+exp(-z)
@@ -187,9 +188,34 @@ plt.show()
 #2)誤差が入った数値の割算値は、確率分布が複雑になる
 
 #y=A*exp(B1+B2*x)　→　exp(B1+B2*x+logA)
+#logy=z
 #線形予測子z=B1+B2*x+logAを考える
 
-fit_offset=smf.glm("y~x",offset=np.log(df["A"]), data=df, family=sm.families.Poisson())
+df_setoff=pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/binomial/data4b.csv")
+#print(df_setoff.head())
+#応答変数yについて考えると、正の離散値で域値の範囲はない　→　ポアソン分布に従うと仮定
+
+plt.scatter(df_setoff.A,df_setoff.y, label="plant")
+
+fit_offset=smf.glm("y~x",offset=np.log(df_setoff.A), data=df_setoff, family=sm.families.Poisson()).fit()
+print(fit_offset.summary())
+
+A=np.arange(df_setoff.A.min(),df_setoff.A.max(),(df_setoff.A.max()-df_setoff.A.min())/25)
+#x=np.arange(df_setoff.x.min(),df_setoff.x.max(),(df_setoff.x.max()-df_setoff.x.min())/100)
+
+def offset_model(x,A):
+    z=fit_offset.params[0]+fit_offset.params[1]*x+np.log(A)
+    return(np.exp(z))
+
+plt.plot(A,offset_model(0.1,A),label="x=0.1",marker="*", color="gray")
+plt.plot(A,offset_model(0.3,A),label="x=0.3",marker="x", color="gray")
+plt.plot(A,offset_model(0.5,A),label="x=0.5",marker="^", color="gray")
+plt.plot(A,offset_model(0.7,A),label="x=0.7",marker="D", color="gray")
+plt.plot(A,offset_model(0.9,A),label="x=0.9",marker="+", color="gray")
+plt.legend(loc="upper left")
+plt.xlabel("size of A")
+plt.ylabel("# of plant")
+plt.show()
 
 # %%
 
@@ -232,3 +258,139 @@ plt.xlabel("y")
 plt.show()
 
 # %%
+
+#花の質量yについてガンマ分布でモデルを作る
+#花の質量y（応答変数）、葉の質量x（説明変数）とすると、
+#花の質量は、正の値をとり、連続値をとるのでガンマ分布に従うと仮定できる
+#ここで、y=A*x**bに従うと仮定すると
+#この時、A＝exp(a)とおくと、y=exp(a)*x**b →　y=exp(a+blogx)と表せる
+#これより、logy=a+blogx
+
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+
+df=pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/gamma/data06.csv")
+plt.scatter(df.x,df.y,label="weight of flower")
+
+df["logx"]=np.log(df.x)
+#print(df.head())
+fit_gamma=smf.glm("y~logx",data=df,family=sm.families.Gamma(link=sm.families.links.log)).fit()
+print(fit_gamma.summary())
+
+"""
+#predictメソッドを使った方法
+df["predict"]=fit_gamma.predict()
+plt.plot(df.x,df.predict)
+"""
+
+#関数を使った方法
+x=np.arange(df.x.min(),df.x.max(),(df.x.max()-df.x.min())/100)
+def gamma_model(x):
+    return(np.exp(fit_gamma.params[0]+fit_gamma.params[1]*(np.log(x))))
+
+def gamma_model2(x):
+    return(np.exp(-1.273+0.549*(np.log(x))))
+
+def gamma_model3(x):
+    return(np.exp(-0.808+0.817*(np.log(x))))
+
+plt.plot(x,gamma_model(x),color="black",label="coef")
+plt.plot(x,gamma_model2(x),color="gray",linestyle="--",label="2.5%")
+plt.plot(x,gamma_model3(x),color="gray",linestyle="--",label="97.5%")
+plt.xlabel("weight of leaf")
+plt.ylabel("weight of flower")
+plt.legend(loc="upper left")
+plt.show()
+
+# %%
+for i in fit_gamma.params:
+    print(i)
+
+# %%
+
+#ガンマ分布を用いた予測の評価
+#statsmodelsのfitメソッドから得られた予測式を用いて50%(25-75%)と90%(5-95%)の予測区間を図示する
+
+#説明変数xとそれに対応する予測値のデータフレームを作成
+df["predict"]=fit_gamma.predict()
+#print(df.predict)
+dt_test=pd.DataFrame({"x": df.x, "p": df.predict})
+
+#上記の予測式の基となるモデルのガンマ分布のパラメータ(shape(分布の形)、loc(標準化)、scale(=1/r(係数)))
+#scipy.statsのfitメソッドで求める
+shape, loc, scale=st.gamma.fit(df.y)
+
+#scipy.statsのintervalメソッドで、shape、loc、scaleに基づいて信頼区間75%と95％に当たる確率変数を取得(任意)
+lower, upper = st.gamma.interval(alpha=0.75, a=shape, loc=loc, scale=scale)
+print('信頼区間95％の下限：', lower)
+print('信頼区間95％の上限：', upper)
+
+#scipy.statsのppf (Percent point function) パーセント点関数で
+#ガンマ分布 => 平均=shape/rate、scale=1/rate、分散=shape/rate**2
+#ppfで必須のパラメーター：shapeとscare
+#ここで、平均=exp(a+b*logx)と表されるので、rate=shape/平均=shape/exp(a+b*logx)と表せる
+#これより、scale=1/rate=exp(a+b*logx)と表せる
+#以下の方法を調べるまで、scaleの値はfitメソッドで求めた値に固定していた。
+#モデルの予測式が応答変数の平均を示していることに気づけるかが重要
+#説明変数に応じて、ppfの値を変化させなければ、予測式の信頼区間は求められない。
+
+def pred_range(per):
+    pred=[]
+    for x in df.x:
+        a=shape
+        rate=a/np.exp(fit_gamma.params[0]+fit_gamma.params[1]*(np.log(x)))
+        scale=1/rate
+        lower, upper=st.gamma.ppf([per,1-per], a=a, scale=scale)
+        pred.append((lower,upper))
+
+    return pred
+
+plt.scatter(df.x,df.y,label="weight of flower")
+
+x=np.arange(df.x.min(),df.x.max(),(df.x.max()-df.x.min())/100)
+def gamma_model(x):
+    return(np.exp(fit_gamma.params[0]+fit_gamma.params[1]*(np.log(x))))
+
+def gamma_model2(x):
+    return(np.exp(-1.273+0.549*(np.log(x))))
+
+def gamma_model3(x):
+    return(np.exp(-0.808+0.817*(np.log(x))))
+
+plt.plot(x,gamma_model(x),color="black",label="coef")
+plt.plot(x,gamma_model2(x),color="gray",linestyle="--",label="2.5%")
+plt.plot(x,gamma_model3(x),color="gray",linestyle="--",label="97.5%")
+
+y1, y2 = map(list, zip(*pred_range(0.25)))
+plt.fill_between(x=df.x, y1=y1, y2=y2, alpha=0.2, color="blue")
+y3, y4 = map(list, zip(*pred_range(0.05)))
+plt.fill_between(x=df.x, y1=y3, y2=y4, alpha=0.1, color="green")
+
+plt.xlabel("weight of leaf")
+plt.ylabel("weight of flower")
+plt.legend(loc="upper left")
+plt.show()
+
+
+# %%
+
+def gamma_model(x):
+    return(np.exp(fit_gamma.params[0]+fit_gamma.params[1]*(np.log(x))))
+
+xx=np.linspace(st.gamma.ppf(q=0.05, a=shape, loc=loc, scale=scale),st.gamma.ppf(q=0.95, a=shape, loc=loc, scale=scale),100)
+yy=[gamma_model(st.gamma.pdf(i, a=shape, loc=loc, scale=scale)) for i in xx]
+
+df50=pd.DataFrame({"xx":xx, "yy":yy})
+
+print(df50)
+
+#plt.plot(xx,yy)
+
+
+#print(st.gamma.ppf(q=0.25, a=shape, loc=loc, scale=scale))
+
+#print(x)
+#print(dt_test.head())
+

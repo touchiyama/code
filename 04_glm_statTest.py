@@ -5,7 +5,6 @@
 #検定統計量である逸脱度の差から単純モデルに比べて複雑モデルの方が
 #より良い予測力を有するかどうかを調べる　（帰無仮説：単純モデル、対立仮説：複雑モデルとする）
 
-from matplotlib import colors
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
