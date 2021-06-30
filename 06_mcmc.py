@@ -3,6 +3,7 @@
 #RのglmmMLというパッケージでGLMMの最尤推定を行う
 #Pythonには、それに対応したモジュールがないっぽい
 #pyperモジュールでRを読み込む
+from time import perf_counter
 from numpy.core.fromnumeric import size
 import pyper
 
@@ -143,4 +144,98 @@ for r in rand_norm:
     z=glmm["coefficients"][0]+glmm["coefficients"][1]*x+r
     q=1
 """
+# %%
+import collections
+import scipy.stats as st
+
+num=[4,3,4,5,5,2,3,1,4,0,1,5,5,6,5,4,4,5,3,4]
+
+x=range(min(num),max(num)+1,1)
+y=[num.count(i) for i in x]
+
+prob=np.arange(0.1,1,0.01)
+logL=[sum(st.binom.logpmf(k=num, n=8, p=i)) for i in prob]
+
+plt.plot(prob,logL)
+plt.axvline(x=prob[np.argmax(logL)],linestyle="--")
+plt.axhline(y=max(logL))
+plt.xlabel("probably")
+plt.ylabel("log-likelihood")
+plt.show()
+
+print(f"パラメータqの最尤推定値:{prob[np.argmax(logL)]}")
+print(f"最大対数尤度：{max(logL)}")
+
+#plt.scatter(x,y)
+p=prob[np.argmax(logL)]
+binom=[st.binom.pmf(k=i, n=8, p=p) for i in x]
+plt.plot(x,binom)
+
+# %%
+
+def loglikelihood(data,p):
+    logL=sum(st.binom.logpmf(k=data, n=8, p=p))
+
+    return logL
+
+xx=np.arange(0.28,0.32,0.01)
+yy=[loglikelihood(i) for i in xx]
+
+plt.scatter(xx, yy, s=100)
+plt.plot(xx,yy,linestyle="--")
+
+# %%
+
+def loglikelihood(data,p):
+    logL=sum(st.binom.logpmf(k=data, n=8, p=p))
+
+    return logL
+
+def mcmc_metropolis(data, p_start, n):
+    p_current=p_start
+    logL_current=loglikelihood(data, p_current)
+
+    p=[p_current]
+    logL=[logL_current]
+    for r1, r2 in zip(np.random.random(n-1), np.random.random(n-1)):
+        #pの増減をランダムに決める
+        if r1 > 0.5:
+            p_new=p_current+0.01
+        else:
+            p_new=p_current-0.01
+
+        #[0.01,0.99]区間の端で生じる問題に対応
+        if p_new <= 0.01:
+            p_new=0.02
+        elif p_new>=0.99:
+            p_new=0.98
+
+        logL_new=loglikelihood(data, p_new)
+        #対数尤度が大きくなるなら、pを更新、また小さくなっても、尤度比の確率でpを更新
+        if logL_current < logL_new or np.exp(logL_new-logL_current) > r2:
+            p_current=p_new
+            logL_current=logL_new
+
+        p.append(p_current)
+        logL.append(logL_current)
+
+    return p,logL
+
+p, logL=mcmc_metropolis(num, 0.3, 2000)
+
+# %%
+import pandas as pd
+
+x=np.arange(0,2000,1)
+fig=plt.figure()
+ax=fig.add_subplot(111)
+ax.plot(x,p)
+ax.set_xlabel("mcmc steps")
+ax.set_ylabel("probability")
+ax.set_ylim(0.2,0.7)
+
+
+# %%
+
+print(len(logL))
 # %%
