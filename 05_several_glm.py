@@ -394,3 +394,20 @@ print(df50)
 #print(x)
 #print(dt_test.head())
 
+
+# %%
+
+df=pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/binomial/data4a.csv", header=None)
+hash={}
+for i in range(1,len(df)):
+    if(df.iloc[i,3]=="T"):
+        hash[df.iloc[i,2]]=df.iloc[i,[1,3]].tolist()
+
+#for i, k in hash.items():
+#    print(i, k)
+
+df_h=pd.DataFrame(hash).transpose()
+print(df_h)
+
+
+

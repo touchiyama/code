@@ -186,6 +186,9 @@ plt.plot(xx,yy,linestyle="--")
 
 # %%
 
+#二項分布に従う統計モデルとメトロポリス法を用いて、
+#MCMCサンプリングを行う
+
 def loglikelihood(data,p):
     logL=sum(st.binom.logpmf(k=data, n=8, p=p))
 
@@ -221,10 +224,12 @@ def mcmc_metropolis(data, p_start, n):
 
     return p,logL
 
-p, logL=mcmc_metropolis(num, 0.3, 2000)
+p, logL=mcmc_metropolis(num, 0.5, 2000)
+
+#MCMCアルゴリズムの目的 => ステップ数とともに変化するパラメータ値の生成
+
 
 # %%
-import pandas as pd
 
 x=np.arange(0,2000,1)
 fig=plt.figure()
@@ -237,5 +242,72 @@ ax.set_ylim(0.2,0.7)
 
 # %%
 
-print(len(logL))
+#マルコフ連鎖の定常分布
+#=>サンプリング数を十分に大きくし、増やしても変動しなくなった時の確率分布を指す
+#定常分布を得るためには、十分な数のMCMCサンプリングが必要
+#定常分布の推定の改善を行うことが求められる（収束速度の大きい初期状態の推定を行うこと）
+#効率の良いMCMCサンプリングの実現 => 複数のMCMCサンプリングの比較を行う
+#その他に、MCMCアルゴリズム、初期状態を捨てるが挙げられる
+
+#マルコフ連鎖の定常分布
+#パラメータ値の尤度に比例することから、あるデータに当てはめた時に
+#パラメータ値のとる確率分布と考えて良い
+#=> MsCMCサンプリング＝統計モデルの当てはめの1つ
+
+#頻度主義：GLMのような最尤推定法によるパラメータ推定（解が１つに定まる）
+#ベイズ統計学：統計モデルのパラメータを確率分布で扱う
+
+#MCMCサンプリング（マルコフ連鎖の定常分布）とベイズ統計モデルは同じ考え方
+
+num=[4,3,4,5,5,2,3,1,4,0,1,5,5,6,5,4,4,5,3,4]
+steps=500
+
+p01, logL01 = mcmc_metropolis(num, 0.1, steps)
+p03, logL03 = mcmc_metropolis(num, 0.3, steps)
+p05, logL05 = mcmc_metropolis(num, 0.5, steps)
+p07, logL07 = mcmc_metropolis(num, 0.7, steps)
+p09, logL09 = mcmc_metropolis(num, 0.9, steps)
+
+x=np.arange(0,steps,1)
+fig=plt.figure()
+ax=fig.add_subplot(111)
+ax.plot(x, p01, label="p(st)=0.1")
+ax.plot(x, p03, label="p(st)=0.3")
+ax.plot(x, p05, label="p(st)=0.5")
+ax.plot(x, p07, label="p(st)=0.7")
+ax.plot(x, p09, label="p(st)=0.9")
+ax.axvline(x=100, color="black", linestyle="--")
+ax.axhline(y=0.45999999999999985, color="black")
+ax.set_xlabel("mcmc steps")
+ax.set_ylabel("probability")
+ax.legend(loc="upper right")
+ax.set_ylim(0,1)
+
+
+# %%
+x=np.arange(0,steps,1)
+fig=plt.figure()
+ax=fig.add_subplot(111)
+ax.plot(x, p01, label="p(st)=0.1")
+ax.plot(x, p03, label="p(st)=0.3")
+ax.plot(x, p05, label="p(st)=0.5")
+ax.plot(x, p07, label="p(st)=0.7")
+ax.plot(x, p09, label="p(st)=0.9")
+ax.axvline(x=100, color="black", linestyle="--")
+ax.axhline(y=0.45999999999999985, color="black")
+ax.set_xlabel("mcmc steps")
+ax.set_ylabel("probability")
+ax.legend(loc="upper right")
+ax.set_ylim(0,1)
+
+# %%
+
+p1, logL1 = mcmc_metropolis(num, 0.3, 100)
+p2, logL2 = mcmc_metropolis(num, 0.3, 100000)
+
+# %%
+
+#plt.hist(p1,color="red",rwidth=0.9, bins=100, density=True)
+plt.hist(p2,color="gray",rwidth=0.9, bins=100, density=True)
+
 # %%
