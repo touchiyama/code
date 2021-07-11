@@ -3,8 +3,6 @@
 #RのglmmMLというパッケージでGLMMの最尤推定を行う
 #Pythonには、それに対応したモジュールがないっぽい
 #pyperモジュールでRを読み込む
-from time import perf_counter
-from numpy.core.fromnumeric import size
 import pyper
 
 r=pyper.R()

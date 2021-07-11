@@ -268,6 +268,8 @@ plt.show()
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as st
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
@@ -408,6 +410,4 @@ for i in range(1,len(df)):
 
 df_h=pd.DataFrame(hash).transpose()
 print(df_h)
-
-
 
