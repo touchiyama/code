@@ -4,6 +4,7 @@
 import pymc3 as mc
 import pandas as pd
 import numpy as np
+from pymc3 import data
 from pymc3.distributions.discrete import Poisson
 
 """
@@ -287,5 +288,53 @@ mc.traceplot(trace)
 
 #MCMCサンプリングの手法
 #NUTS > HamiltonianMC > Metropolis
+
+# %%
+
+#MCMCサンプリング過程で得られた全パラメータβ1とβ2を用いて、モデリングを可視化
+
+def MCMC_model(b1, b2, x):
+        return(np.exp(b1+b2*x))
+
+def poisson_model(x):
+    return(np.exp(trace["beta1"].mean()+trace["beta2"].mean()*x))
+
+plt.scatter(df.x, df.y)
+
+for b1, b2 in zip(trace["beta1"], trace["beta2"]):
+        x = np.arange(min(df.x), max(df.x), (max(df.x)-min(df.x))/100)
+        plt.plot(x, MCMC_model(b1, b2, x), linestyle="--", color="gray", alpha=0.03)
+
+x = np.arange(min(df.x), max(df.x), (max(df.x)-min(df.x))/100)
+plt.plot(x, poisson_model(x), color="red", label="mean")
+plt.ylabel("# of seeds")
+plt.xlabel("size")
+plt.legend()
+plt.show()
+
+# %%
+import collections
+
+data7a = pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/hbm/data7a.csv")
+
+c=collections.Counter(data7a.y)
+cnt = []
+yy = np.arange(min(data7a.y), max(data7a.y)+1, 1)
+for y in yy:
+        cnt.append(c[y])
+
+#y,cnt=map(list, zip(*c.most_common()))
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+ax.scatter(yy,cnt,label="observed data")
+ax.plot(yy, cnt, linestyle="--")
+ax.set_xlabel("# of seed")
+ax.set_ylabel("# of plant")
+ax.set_ylim(0, max(cnt)+5)
+ax.legend(loc="upper left")
+
+#pymc3で個体差を組み込んだ二項分布モデルを作る
+
 
 # %%
