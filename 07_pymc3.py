@@ -334,7 +334,64 @@ ax.set_ylabel("# of plant")
 ax.set_ylim(0, max(cnt)+5)
 ax.legend(loc="upper left")
 
-#pymc3で個体差を組み込んだ二項分布モデルを作る
+# %%
 
+#pymc3で個体差を組み込んだ二項分布モデルを作る
+#二項分布の確率 q = 1 / (1 + exp(-z))
+#z = beta + r
+
+#log(q/1-q) = z
+#logit(q) = log(q/1-q) を指し、logit(q) = z と表せる。
+
+with mc.Model() as binom_MC_model:
+        beta = mc.Normal("beta", mu=0, sd=100)
+
+        #全100個体分の正規分布を求める
+        s = mc.Uniform("s", lower=0, upper=10000)
+        r = mc.Normal("r", mu=0, sd=s, shape=len(data7a.y))　#shapeの意味を調べる
+
+        z = beta + r
+        q = mc.Deterministic("q", 1/(1+np.exp((-1)*z)))
+        y = mc.Binomial("y", n=8, p=q, observed=data7a.y)
+
+# %%
+mc.model_to_graphviz(binom_MC_model)
+
+# %%
+with binom_MC_model:
+    # NUTSで101個目からサンプルを取得するチェインを3つ作る
+    trace = mc.sample(1500, step=mc.NUTS(), tune=100, njobs=3, random_seed=0)
+
+# %%
+
+mc.summary(trace, varnames=['beta', 's'])
+# %%
+
+#全ペア(1500x3=4500個）の{beta,s}で、
+#100個体分の線形予測子z=bata+rを求める
+
+#まず、平均0、各標準偏差s（全1500x3=4500個）から100個体分の個体差rを正規分布で生成する
+#全ペアの{beta,r}で線形予測子を求め、それに対応する生存確率qを求める
+#生存確率q=1/(1+exp(-z))、ロジスティック回帰を求める
+
+#100個の各生存確率に対応した二項分布を求める
+
+"""
+#イメージ：[(1)[1,2,..,1500], (2)[1,2,..,1500]2,..., (100)[1,2,..,1500]]
+
+y = []
+for ii in range(0,100):
+        prob = []
+        for b, sd in zip(beta,s):
+                ri = binom(0, sd, observed=ii)
+                zi = b + ri
+                qi = 1/1+exp(-zi)
+                prob.append(qi)
+        yi=binomal(8,prob)
+        y.append(yi)
+
+#イメージ：[(1)[1,2,..,1500], (2)[1,2,..,1500]2,..., (100)[1,2,..,1500]]
+#1500サンプル・100個体分の生存確率の平均値を計算する
+"""
 
 # %%
