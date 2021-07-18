@@ -1,6 +1,9 @@
 # %%
 
 #pymc3でベイス統計モデリングを行う
+from matplotlib import colors
+from numpy.core.fromnumeric import mean, size
+from numpy.lib.function_base import average
 import pymc3 as mc
 import pandas as pd
 import numpy as np
@@ -279,8 +282,10 @@ mc.summary(trace)
 # %%
 mc.traceplot(trace)
 # %%
+
 with model:
         trace = mc.sample(1600, step=mc.Metropolis(), burn=100, thin=100, njobs=3, random_seed=0)[::3]
+
 # %%
 mc.summary(trace)
 # %%
@@ -314,6 +319,9 @@ plt.show()
 
 # %%
 import collections
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 data7a = pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/hbm/data7a.csv")
 
@@ -342,13 +350,14 @@ ax.legend(loc="upper left")
 
 #log(q/1-q) = z
 #logit(q) = log(q/1-q) を指し、logit(q) = z と表せる。
+import pymc3 as mc
 
 with mc.Model() as binom_MC_model:
         beta = mc.Normal("beta", mu=0, sd=100)
 
         #全100個体分の正規分布を求める
         s = mc.Uniform("s", lower=0, upper=10000)
-        r = mc.Normal("r", mu=0, sd=s, shape=len(data7a.y))　#shapeの意味を調べる
+        r = mc.Normal("r", mu=0, sd=s, shape=len(data7a.y)) #shapeの意味を調べる
 
         z = beta + r
         q = mc.Deterministic("q", 1/(1+np.exp((-1)*z)))
@@ -365,6 +374,11 @@ with binom_MC_model:
 # %%
 
 mc.summary(trace, varnames=['beta', 's'])
+
+# %%
+
+mc.traceplot(trace, varnames=['beta', 's', 'r'])
+
 # %%
 
 #全ペア(1500x3=4500個）の{beta,s}で、
@@ -376,22 +390,107 @@ mc.summary(trace, varnames=['beta', 's'])
 
 #100個の各生存確率に対応した二項分布を求める
 
-"""
-#イメージ：[(1)[1,2,..,1500], (2)[1,2,..,1500]2,..., (100)[1,2,..,1500]]
+#イメージ：[(1)[1,2,..,100], (2)[1,2,..,100],..., (4500)[1,2,..,100]]
 
-y = []
-for ii in range(0,100):
-        prob = []
-        for b, sd in zip(beta,s):
-                ri = binom(0, sd, observed=ii)
-                zi = b + ri
-                qi = 1/1+exp(-zi)
-                prob.append(qi)
-        yi=binomal(8,prob)
-        y.append(yi)
+prob = []
+for beta, ri in zip(trace['beta'], trace['r']):
+        #ri = np.random.normal(loc=0, scale=sd)#xの範囲がわからない
+        zi = beta + ri
+        qi = 1/(1+np.exp((-1)*zi))
+        prob.append(qi)
 
-#イメージ：[(1)[1,2,..,1500], (2)[1,2,..,1500]2,..., (100)[1,2,..,1500]]
-#1500サンプル・100個体分の生存確率の平均値を計算する
-"""
+y_pred = []
+for pi in np.array(prob):
+        yi = np.random.binomial(n=8, p=pi) #二項分布に従う乱数を発生
+        y_pred.append(yi)
+
+#4500サンプル・100個体分の生存確率の平均値を計算する
+#print(len(np.array(y))) <- 4500サンプル
+#print(len(np.array(y[0]))) <- 100個体
+
+
+# %%
+
+plt.hist(np.array(y[0]))
+plt.hist(np.array(y[1]))
+
+#上記2サンプルのヒストグラムの分布を確認すると、
+#パラメータの事後分布に基づいて統計モデルを可視化する方法をうまく探せそう
+
+# %%
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+yy = np.arange(min(data7a.y), max(data7a.y)+1, 1)
+
+for yi in y_pred:
+        c=collections.Counter(yi)
+        cnt = []
+        for y in yy:
+                cnt.append(c[y])
+
+        ax.scatter(yy, cnt, color="gray", alpha=0.03)
+        ax.plot(yy, cnt, linestyle="--", color="gray", alpha=0.03)
+
+
+data7a = pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/hbm/data7a.csv")
+c=collections.Counter(data7a.y)
+cnt = []
+for y in yy:
+        cnt.append(c[y])
+
+ax.scatter(yy, cnt, label="observed data")
+ax.plot(yy, cnt, linestyle="--")
+
+cnt = []
+for yi in y_pred:
+        c += collections.Counter(yi)
+
+for y in yy:
+        ave=c[y]/(4500)
+        cnt.append(ave)
+
+ax.scatter(yy, cnt, label="predict data")
+ax.plot(yy, cnt, linestyle="--")
+
+ax.set_xlabel("# of seed")
+ax.set_ylabel("# of plant")
+ax.legend(loc="upper left")
+ax.set_ylim(0, 35)
+ax.legend(loc="upper left")
+
+#%%
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+yy = np.arange(min(data7a.y), max(data7a.y)+1, 1)
+
+data7a = pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/hbm/data7a.csv")
+c=collections.Counter(data7a.y)
+cnt = []
+for y in yy:
+        cnt.append(c[y])
+
+ax.scatter(yy, cnt, label="observed data")
+ax.plot(yy, cnt, linestyle="--")
+
+cnt = []
+for yi in y_pred:
+        c += collections.Counter(yi)
+
+for y in yy:
+        ave=c[y]/(4500)
+        cnt.append(ave)
+
+ax.scatter(yy, cnt, label="predict data")
+ax.plot(yy, cnt, linestyle="--")
+
+ax.set_xlabel("# of seed")
+ax.set_ylabel("# of plant")
+ax.legend(loc="upper left")
+ax.set_ylim(0, 30)
+ax.legend(loc="upper left")
 
 # %%
