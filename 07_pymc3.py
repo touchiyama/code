@@ -7,8 +7,6 @@ from numpy.lib.function_base import average
 import pymc3 as mc
 import pandas as pd
 import numpy as np
-from pymc3 import data
-from pymc3.distributions.discrete import Poisson
 
 """
 pymc3.sampling.sample(draws=500, step=None, init='auto', n_init=200000,
@@ -493,4 +491,245 @@ ax.legend(loc="upper left")
 ax.set_ylim(0, 30)
 ax.legend(loc="upper left")
 
+# %%
+
+#pymc3で個体差と場所差を組み込んだポアソン分布モデルを作る（階層ベイズモデル）
+import matplotlib.pyplot as plt
+import matplotlib.collections as mc
+import pandas as pd
+
+d1 = pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/hbm/nested/d1.csv")
+#print(d1.head())
+#print(d1.tail())
+#print(d1.y)
+
+#データフレームで、複数条件で行を抽出
+#plt.scatter(d1.id[(d1.pot=="A") & (d1.f=="C")], d1.y[(d1.pot=="A") & (d1.f=="C")])
+
+#大文字のアルファベット26文字全て羅列する
+#print([chr(ord("A")+i) for i in range(26)])
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+for i in range(10):
+        pot = chr(ord("A")+i)
+        if i <= 4:
+                label=pot + "-C"
+        else:
+                label=pot + "-T"
+        ax.scatter(d1.id[d1.pot==pot], d1.y[d1.pot==pot], label=label)
+
+"""
+line_1 = [(1, d1.y[d1.f=="C"].mean()), (50, d1.y[d1.f=="C"].mean())]
+line_2 = [(51, d1.y[d1.f=="T"].mean()), (100, d1.y[d1.f=="T"].mean())]
+line_1_2 = mc.LineCollection([line_1, line_2],
+                              colors=["#1f77b4", "#ff7f0e"],
+                              linestyle=["--", "--"],
+                              label=["C", "T"])
+ax.add_collection(line_1_2)
+"""
+
+x1=np.arange(1, 51, 1)
+y1=[d1.y[d1.f=="C"].mean() for i in range(50)]
+ax.plot(x1, y1, color="#1f77b4", linestyle="--", label="C_mean")
+
+x2=np.arange(51, 101, 1)
+y2=[d1.y[d1.f=="T"].mean() for i in range(50)]
+ax.plot(x2, y2, color="#ff7f0e", linestyle="--", label="T_mean")
+
+ax.set_xlabel("plant ID")
+ax.set_ylabel("# of seed")
+ax.set_ylim(0, max(d1.y)+5)
+ax.set_xlim(0, max(d1.id)+35)
+ax.legend(loc="upper right")
+
+
+# %%
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+label = [chr(ord("A")+i) for i in range(10)]
+bp = ax.boxplot([d1.y[d1.pot=="A"], d1.y[d1.pot=="B"], d1.y[d1.pot=="C"],
+                 d1.y[d1.pot=="D"], d1.y[d1.pot=="E"], d1.y[d1.pot=="F"],
+                 d1.y[d1.pot=="G"], d1.y[d1.pot=="H"], d1.y[d1.pot=="I"],
+                 d1.y[d1.pot=="J"]], labels=label, patch_artist=True,
+                 medianprops=dict(color='black', linewidth=1)
+                )
+
+# 細かい設定をできるようにする
+# patch_artist=True
+
+color = []
+for i in range(10):
+        if i <= 4:
+                color.append("#1f77b4")
+        else:
+                color.append("#ff7f0e")
+
+for b, c in zip(bp['boxes'], color):
+        b.set(color='black', linewidth=1)  # boxの外枠の色
+        b.set_facecolor(c) # boxの色
+
+ax.set_xlabel("pot")
+ax.set_ylabel("# of seed")
+ax.set_ylim(0, max(d1.y)+5)
+
+
+# %%
+
+#d1データフレームの加工
+#d1.f=="C"の時、0
+#d1.f=="T"の時、1
+
+d1.f[d1.f == 'C'] = int(0)
+d1.f[d1.f == 'T'] = int(1)
+d1.f = d1.f.astype(int)
+
+# %%
+
+#d1データフレームの加工
+#A -> 1, B -> 2, C -> 3
+alphabet = {}
+for i in range(65, 65+10):
+        alphabet[chr(i)] = i - 65
+
+
+for i in range(len(d1)):
+        d1.iloc[i, 1] = alphabet[d1.iloc[i, 1]]
+
+d1.pot = d1.pot.astype(int)
+
+# %%
+
+
+print(d1.dtypes)
+
+print(d1.head())
+print(d1.tail())
+print(d1.iloc[49,:])
+print(d1.iloc[50,:])
+
+# %%
+
+#再帰関数使用時に発生したエラーの対策
+#RecursionError: maximum recursion depth exceeded in comparison
+#再帰上限の変更（デフォルト上限:10000）
+
+import sys
+
+print(sys.getrecursionlimit())
+sys.setrecursionlimit(100000) # RecursionError対策
+
+# 再帰上限を上げたら計算できない状況になった　→ pystanでは実行できるのだろうか？
+# pymc3とpystanで比較検討を行ってみる　
+
+# %%
+print(sys.getrecursionlimit())
+
+# %%
+print(len(d1.id))
+
+# %%
+import pymc3 as mc
+
+#logλ=b1+b2x+ri+rj
+
+with mc.Model() as pois_MC_model:
+        beta1 = mc.Normal("beta1", mu=0, sd=100)
+        beta2 = mc.Normal("beta2", mu=0, sd=100)
+
+        s = mc.Uniform("s", lower=0, upper=10000)
+        r = mc.Normal("r", mu=0, sd=s, shape=len(d1.id))
+
+        sp = mc.Uniform("sp", lower=0, upper=10000)
+        rp = mc.Normal("rp", mu=0, sd=sp, shape=len(d1.pot.unique()))
+
+        link = beta1 + beta2 * d1.f + r + rp[d1.pot]
+        lamda = mc.Deterministic("lamda", np.exp(link))
+        y = mc.Poisson("y", mu=lamda, observed=d1.y)
+
+# %%
+
+mc.model_to_graphviz(pois_MC_model)
+
+
+# %%
+
+with pois_MC_model:
+        draws=2000
+        p_start=mc.find_MAP()
+        steps=mc.NUTS()
+        #steps=mc.HamiltonianMC()
+        tune=500
+        njobs=3
+        random_seed=10
+
+        trace=mc.sample(draws=draws, start=p_start, steps=steps, tune=tune, cores=1)
+
+# %%
+
+mc.summary(trace, varnames=['rp'])
+
+# %%
+
+import numpy as np
+
+lamda_sum = np.zeros(len(d1.y))
+
+for li in trace['lamda']:
+        lamda_sum +=li
+
+lamda_mean = lamda_sum / len(trace['lamda'])
+
+print(lamda_mean)
+
+# %%
+
+mc.summary(trace, varnames=['lamda'])
+
+# %%
+
+d1 = pd.read_csv("/Users/tomoyauchiyama/statisticModel/kubobook_2012/hbm/nested/d1.csv")
+
+np.random.seed(100)
+id = np.arange(min(d1.id), max(d1.id)+1)
+pred_y = np.random.poisson(lam=lamda_mean)
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+for i in range(10):
+        pot = chr(ord("A")+i)
+        if i <= 4:
+                label=pot + "-C"
+        else:
+                label=pot + "-T"
+        ax.scatter(d1.id[d1.pot==pot], d1.y[d1.pot==pot], label=label)
+
+x1=np.arange(1, 51, 1)
+y1=[d1.y[d1.f=="C"].mean() for i in range(50)]
+ax.plot(x1, y1, color="#1f77b4", linestyle="--", label="C_mean")
+
+x2=np.arange(51, 101, 1)
+y2=[d1.y[d1.f=="T"].mean() for i in range(50)]
+ax.plot(x2, y2, color="#ff7f0e", linestyle="--", label="T_mean")
+
+ax.scatter(id, pred_y, label="observed data", color="gray", alpha=0.5)
+ax.plot(id, pred_y, linestyle="--", color="gray", alpha=0.5)
+
+ax.set_xlabel("# of seed")
+ax.set_ylabel("plant ID")
+#ax.set_ylim(0, max(y_pred)+5)
+ax.set_ylim(0, max(d1.y)+5)
+ax.set_xlim(0, max(d1.id)+2)
+ax.legend(bbox_to_anchor=(1.4, 1), loc="upper right")
+#ax.legend(loc="upper left")
+
+
+# %%
+
+
+plt.scatter(d1.y, pred_y)
 # %%
