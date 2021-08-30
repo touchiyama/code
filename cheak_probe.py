@@ -178,12 +178,10 @@ if __name__ == '__main__':
     __version__ = '1.0'
     __desciption__ = 'Some useful program commands are:'
 
-    args = parameters(__desciption__)
+    parm = parameters(__desciption__)
 
     logger = getLogger('__main__')
-
-    loglevel = args.log_level
-    logger.setLevel(logging.loglevel)
+    logger.setLevel(parm.loglevel)
 
     handler_format = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 

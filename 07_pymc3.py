@@ -729,7 +729,95 @@ ax.legend(bbox_to_anchor=(1.4, 1), loc="upper right")
 
 
 # %%
-
-
 plt.scatter(d1.y, pred_y)
+
+# %%
+print(y_pred)
+
+
+label1 = [chr(ord("A")+i) + 'o' for i in range(10)]
+label2 = [chr(ord("A")+i) + 'p' for i in range(10)]
+label = label1 + label2
+sort_label = sorted(label)
+
+print(label)
+
+print(sort_label)
+
+# %%
+
+#
+# 新規データフレームの構築
+#
+
+# データフレームの初期化
+d2 = pd.DataFrame()
+for i in range(len(pred_y)):
+        idx = i % 10
+        label = 'p_' + chr(ord('A') + idx)
+        col = pd.Series([i+1, label, pred_y[i]])
+        d2 = d2.append(col, ignore_index=True)
+
+d2.columns = ['id', 'pot', 'y']
+d2.id = d2.id.astype(int)
+d2.pot = d2.pot.astype(str)
+d2.y = d2.y.astype(int)
+
+# %%
+
+#
+# 2つのデータフレームの連結
+#
+
+# 連結する前に配列の形を整えた
+d3 = pd.concat([d1.iloc[:, [0, 1, 3]], d2])
+print(d3)
+
+# %%
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+label1 = [chr(ord("A")+i) + 'o' for i in range(10)]
+label2 = [chr(ord("A")+i) + 'p' for i in range(10)]
+label = label1 + label2
+sort_label = sorted(label)
+
+bp = ax.boxplot([d3.y[d3.pot=="A"], d3.y[d3.pot=="p_A"], d3.y[d3.pot=="B"],
+                 d3.y[d3.pot=="p_B"], d3.y[d3.pot=="C"], d3.y[d3.pot=="p_C"],
+                 d3.y[d3.pot=="D"], d3.y[d3.pot=="p_D"], d3.y[d3.pot=="E"],
+                 d3.y[d3.pot=="p_E"], d3.y[d3.pot=="F"], d3.y[d3.pot=="p_F"],
+                 d3.y[d3.pot=="G"], d3.y[d3.pot=="p_G"], d3.y[d3.pot=="H"],
+                 d3.y[d3.pot=="p_H"], d3.y[d3.pot=="I"], d3.y[d3.pot=="p_I"],
+                 d3.y[d3.pot=="J"], d3.y[d3.pot=="p_J"]],labels=sort_label, patch_artist=True, medianprops=dict(color='black', linewidth=1)
+                )
+
+# 細かい設定をできるようにする
+# patch_artist=True
+
+color = []
+for i in range(len(label)):
+        if i < int(len(label)/2):
+                color.append("#1f77b4")
+        else:
+                color.append("#ff7f0e")
+
+for b, c in zip(bp['boxes'], color):
+        b.set(color='black', linewidth=1)  # boxの外枠の色
+        b.set_facecolor(c) # boxの色
+
+
+ax.set_xlabel("pot")
+ax.set_ylabel("# of seed")
+ax.set_ylim(0, max(d1.y)+5)
+
+# 総括
+# observed dataとpredict dataの比較について
+# 個体差間のプロットでは、predict dataがobserved dataに
+# よく当てはまっていたことがわかった（過学習？）
+# 場所差間のプロットでは、両者の分布に差が見られるように思えた
+
+
+
+
 # %%
