@@ -650,6 +650,9 @@ with mc.Model() as pois_MC_model:
         lamda = mc.Deterministic("lamda", np.exp(link))
         y = mc.Poisson("y", mu=lamda, observed=d1.y)
 
+#%%
+print(lamda)
+
 # %%
 
 mc.model_to_graphviz(pois_MC_model)

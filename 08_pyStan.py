@@ -6,7 +6,7 @@
 
 #import stan
 import pystan
-import arviz
+#import arviz
 #import stan_jupyter as stan
 import pandas as pd
 import numpy as np
