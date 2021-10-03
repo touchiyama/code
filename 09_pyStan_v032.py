@@ -1,4 +1,5 @@
 # %%
+from arviz.stats.stats_utils import smooth_data
 import pyper
 import stan_jupyter as stan
 import pandas as pd
@@ -268,6 +269,8 @@ posterior = stan.build(CARS_model_2, data=observed_data)
 fit = posterior.sample(num_chains=4, num_samples=1000)
 # %%
 # ========== visialize parameters ========== #
+import arviz
+
 arviz.plot_trace(fit)
 plt.show()
 # %%
@@ -379,4 +382,97 @@ for j in range(2):
                     data=d_est, color='k', alpha=0.2*(j+1))
 
 plt.show()
+
+# %%
+#
+# 2次元の空間状態モデルを考える
+#
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# ========== read data ========== #
+mesh2D = pd.read_csv('/Users/tomoyauchiyama/RStanBook/chap12/input/data-2Dmesh.txt', header=None)
+
+# %%
+# ========== make heatmap ========== #
+y = mesh2D.index.values
+x = mesh2D.columns.values
+
+fig = go.Figure(data=go.Heatmap(
+        colorbar=dict(
+            title='2Dmesh_value'
+        ),
+        z=mesh2D,
+        x=x,
+        y=y,
+        colorscale='Viridis'))
+
+fig.update_xaxes(title='Plate column')
+fig.update_yaxes(title='Plate row')
+
+fig.update_layout(
+    title='384 plate',
+    xaxis_nticks=36)
+
+fig.show()
+# %%
+# ========== preparation ========== #
+d_melt = pd.melt(mesh2D.reset_index(), id_vars='index', ignore_index=True)
+d_melt.columns = ('i', 'j', 'Y')
+
+print(d_melt['i'])
+
+# %%
+# ========== smoothing ========== #
+from loess.loess_2d import loess_2d
+
+x = d_melt['i'].to_numpy()
+y = d_melt['j'].astype('int64').to_numpy()
+z = d_melt['Y'].to_numpy()
+#z = x + y
+
+loess_res, _ = loess_2d(x, y, z, frac=0.2)
+
+# %%
+print(loess_res)
+print(type(loess_res))
+
+# %%
+
+# ========== make smoothed data matrix ========== #
+I = mesh2D.index.size
+J = mesh2D.columns.size
+smoothed = loess_res.reshape(I, J)
+
+print(smoothed)
+
+# %%
+
+
+# %%
+import pyper
+
+r = pyper.R()
+r('install.packages(\'reshape2\')')
+
+r('library(\'reshape2\')')
+r('d <- as.matrix(read.csv(\'/Users/tomoyauchiyama/RStanBook/chap12/input/data-2Dmesh.txt\', header=F))')
+r('I <- nrow(d)')
+r('J <- ncol(d)')
+r('rownames <- 1:I')
+r('colnames <- 1:J')
+r('d_melt <- reshape2::melt(d)')
+r('colnames(d_melt) <- c(\'i\', \'j\', \'Y\')')
+
+r('d_melt$j = as.numeric(d_melt$j)')
+
+r('loess_res <- loess(Y ~ i + j, data=d_melt, span=0.1)')
+r('smoothed <- matrix(loess_res$fitted, nrow=I, ncol=J)')
+
+data = r.get('smoothed') # class 'numpy.ndarray'
+# %%
+print(data)
 # %%
