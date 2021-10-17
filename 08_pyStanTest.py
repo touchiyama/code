@@ -4,6 +4,7 @@
 # pystanを用いて、統計モデリングを行ってみる
 #
 
+import stan
 import stan_jupyter as stan
 import pandas as pd
 import numpy as np
@@ -126,12 +127,17 @@ schools_data = {'J': 8,
                 'sigma': [15, 10, 16, 11, 9, 11, 10, 18]}
 
 # %%
+print(schools_data)
 
-posterior = stan.build(schools_code, data=schools_data)
+# %%
+
+sm = pystan.StanModel(model_code=schools_code)
+#posterior = stan.build(schools_code, data=schools_data)
 
 #%%
 
-fit = posterior.sample(num_chains=4, num_samples=1000)
+fit = sm.sampling(data=schools_data, iter=1000, chains=4)
+#fit = posterior.sample(num_chains=4, num_samples=1000)
 
 # %%
 eta = fit['eta']
@@ -404,6 +410,8 @@ schools_data = {'J': 8,
 # %%
 # モデルのコンパイル
 posterior = stan.build(schools_code, data=schools_data)
+
+#%%
 # MCMCサンプリングの実行
 fit = posterior.sample(num_chains=4, num_samples=1000)
 
@@ -413,4 +421,4 @@ eta = fit['eta']
 print(eta)
 df = fit.to_frame()
 print(df)
-# %%
+

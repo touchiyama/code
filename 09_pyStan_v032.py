@@ -1,7 +1,7 @@
 # %%
-from arviz.stats.stats_utils import smooth_data
-import pyper
+
 import stan_jupyter as stan
+import pyper
 import pandas as pd
 import numpy as np
 import collections
@@ -26,6 +26,8 @@ print(len(data))
 print(type(data))
 
 print(pd.Series(data).describe())
+
+print(data)
 
 # %%
 
@@ -335,6 +337,9 @@ observed_data = {
     'Y': data
 }
 
+# %%
+print(observed_data)
+
 #%%
 
 # ========== model compile ========== #
@@ -388,13 +393,23 @@ plt.show()
 # 2次元の空間状態モデルを考える
 #
 
+import stan_jupyter as stan
+import arviz
+import numpy as np
 import pandas as pd
+from loess.loess_2d import loess_2d
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+%matplotlib inline
 
+
+# %%
 # ========== read data ========== #
 mesh2D = pd.read_csv('/Users/tomoyauchiyama/RStanBook/chap12/input/data-2Dmesh.txt', header=None)
+
+m = np.loadtxt('/Users/tomoyauchiyama/RStanBook/chap12/input/data-2Dmesh.txt', delimiter=',')
+print(m)
 
 # %%
 # ========== make heatmap ========== #
@@ -427,8 +442,6 @@ print(d_melt['i'])
 
 # %%
 # ========== smoothing ========== #
-from loess.loess_2d import loess_2d
-
 x = d_melt['i'].to_numpy()
 y = d_melt['j'].astype('int64').to_numpy()
 z = d_melt['Y'].to_numpy()
@@ -446,11 +459,93 @@ print(type(loess_res))
 I = mesh2D.index.size
 J = mesh2D.columns.size
 smoothed = loess_res.reshape(I, J)
-
+print(I)
+print(J)
 print(smoothed)
+print(type(smoothed))
 
 # %%
+mesh2D_design = pd.read_csv('/Users/tomoyauchiyama/RStanBook/chap12/input/data-2Dmesh-design.txt', header=None)
+dd_melt = pd.melt(mesh2D_design.reset_index(), id_vars='index', ignore_index=True)
+dd_melt.columns = ('i', 'j', 'TID')
 
+md = np.loadtxt('/Users/tomoyauchiyama/RStanBook/chap12/input/data-2Dmesh-design.txt', delimiter=',')
+print(md)
+print(mesh2D_design.to_numpy().reshape(I, J))
+
+
+# %%
+# ========== modeling ========== #
+mesh2D_model = '''
+    data {
+        int I;
+        int J;
+        real Y[I, J];
+        int T;
+        int<lower=0, upper=T> TID[I, J];
+    }
+    parameters {
+        real r[I, J];
+        real<lower=0> s_r;
+        vector[T] beta;
+        real<lower=0> s_beta;
+        real<lower=0> s_Y;
+    }
+    model {
+        for (i in 1:I)
+            for (j in 3:J)
+                target += normal_lpdf(r[i, j] | 2*r[i, j-1] - r[i, j-2], s_r);
+
+        for (i in 3:I)
+            for (j in 1:J)
+                target += normal_lpdf(r[i, j] | 2*r[i-1, j] - r[i-2, j], s_r);
+
+        beta ~ student_t(6, 0, s_beta);
+        for (i in 1:I)
+            for (j in 1:J)
+                Y[i, j] ~ normal(r[i, j] + beta[TID[i, j]], s_Y);
+    }
+'''
+# %%
+
+observed_data = {
+    'I': int(mesh2D.index.size),
+    'J': int(mesh2D.columns.size),
+    'Y': mesh2D.to_numpy().reshape(I, J),
+    'T': int(mesh2D_design.values.max()),
+    'TID': mesh2D_design.to_numpy().reshape(I, J)
+}
+
+# %%
+print(observed_data)
+
+# %%
+observed_data = dict(
+    I=mesh2D.index.size,
+    J=mesh2D.columns.size,
+    Y=m,
+    T=int(mesh2D_design.values.max()),
+    TID=md
+)
+
+# %%
+print(observed_data)
+
+# %%
+# ========== model compile ========== #
+posterior = stan.build(mesh2D_model, data=observed_data)
+
+# %%
+# ========== MCMC sampling ========== #
+init = {
+    'r': smoothed,
+    's_r': 1,
+    'beta': np.random.normal(0, 0.1, mesh2D_design.values.max()),
+    's_beta': 1,
+    's_Y': 1
+}
+
+fit = posterior.sample(num_chains=4, num_samples=1000, init=init)
 
 # %%
 import pyper
@@ -475,4 +570,48 @@ r('smoothed <- matrix(loess_res$fitted, nrow=I, ncol=J)')
 data = r.get('smoothed') # class 'numpy.ndarray'
 # %%
 print(data)
+
+
+
+# %%
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from sklearn.svm import SVR
+
+df = px.data.iris()
+
+#Xからの写像を作っておく
+
+margin = 0
+X = df[['sepal_width', 'sepal_length']]
+y = df['petal_width']
+model = SVR(C=1.)
+model.fit(X, y)
+
+#細かい点(メッシュ,グリッド)を発生
+
+mesh_size = .02
+x_min, x_max = X.sepal_width.min() - margin, X.sepal_width.max() + margin
+y_min, y_max = X.sepal_length.min() - margin, X.sepal_length.max() + margin
+xrange = np.arange(x_min, x_max, mesh_size)
+yrange = np.arange(y_min, y_max, mesh_size)
+xx, yy = np.meshgrid(xrange, yrange)
+
+#メッシュのすべての点について予測
+
+pred = model.predict(np.c_[xx.ravel(), yy.ravel()])
+pred = pred.reshape(xx.shape)
+
+#元の点をplotしてから、x1,x2によるgrid面をzによって押し上げる
+#面は全ての点をつなぐsurfaceをつかって描く
+
+fig = px.scatter_3d(df, x='sepal_width', y='sepal_length', z='petal_width')
+fig.update_traces(marker=dict(size=1))
+fig.add_traces(go.Surface(x=xrange, y=yrange, z=pred, name='pred_surface'))
+fig.show()
+
+# %%
+df = px.data.iris()
+print(df)
 # %%
