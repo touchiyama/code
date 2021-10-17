@@ -1,0 +1,179 @@
+#[uchiyamat@gifu TEST]$ ls -lh WES_valdation_Vis/0*py
+#-rwxr-x--- 1 uchiyamat dgc 12K 10月 13 09:21 WES_valdation_Vis/00_plot_mapDepth.py
+#-rwxrwx--- 1 uchiyamat dgc 13K 10月 12 20:49 WES_valdation_Vis/01_plot_all.py
+
+#-rwxr-x--- 1 uchiyamat dgc 14K 10月 12 20:59 WES_valdation_Vis/04_venn_plot.py
+#-rwxr-x--- 1 uchiyamat dgc 15K 10月 13 09:15 WES_valdation_Vis/05_make_Cv_table.py
+
+#-rwxrwx--- 1 uchiyamat dgc 14K 10月 13 09:22 WES_valdation_Vis/02_plot_robustness.py
+
+
+#-rwxr-x--- 1 uchiyamat dgc 17K 10月 12 20:31 WES_valdation_Vis/03_detect_vars_with_F1.py
+#-rwxr-x--- 1 uchiyamat dgc 13K 10月 12 21:08 WES_valdation_Vis/06_plot_cnv_linearity.py
+#-rwxrwx--- 1 uchiyamat dgc 19K 10月 13 09:15 WES_valdation_Vis/07_calc_cnvCorr.py
+#-rwxr-x--- 1 uchiyamat dgc 11K 10月 12 21:22 WES_valdation_Vis/08_plot_cnvCorr.py
+
+#command_list_data.logを作る
+#qsub -V -q ${queue} -o command_list_${day}.log -e command_list_${day}.log -j y -hold_jid ${prefix}_$1 -N ${prefix}_$1_Extract_Commands \
+#    grep -e '"'"^INFO: qsub"'"' -e '"'"^INFO: cp"'"' $log_file
+
+
+[uchiyamat@gifu WES_valdation_Vis]$ which python3
+/NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 0*py -h
+usage: 00_plot_mapDepth.py [-h] -i INFILE -l LEGEND [LEGEND ...] -y {1,2} -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-o OUT_DIR] [-n JSON_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INFILE             input file (default: None)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2}              choose the following number (1: all, 2: robustness) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -o OUT_DIR            input output path (absolution path) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis)
+  -n JSON_NAME          input json filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/00_plot_mapDepth.json)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO) (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 01*py -h
+usage: 01_plot_all.py [-h] -i INFILE -l LEGEND [LEGEND ...] -y {1,2,3,4,5,6,7} -x1 X1 [X1 ...] -x2 X2 [X2 ...] [-o OUT_DIR] [-n JSON_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INFILE             input summary xlsx file (default: None)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4,5,6,7}    choose the following number (1: mapping-related, 2: TMB, 3: MSI, 4: SNV+INDEL, 5: sensitivity, 6: CNV, 7: CNV_Corr) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -o OUT_DIR            input output path (absolution path) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis)
+  -n JSON_NAME          input json filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/01_plot_all)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO) (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 02*py -h
+usage: 02_plot_robustness.py [-h] -i1 INFILE1 [-i2 INFILE2] -l LEGEND [LEGEND ...] -y {1,2,3,4,5,6,7} -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-o OUT_DIR] [-n JSON_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i1 INFILE1           input summary xlsx file (default: None)
+  -i2 INFILE2           input orientation bias filtered TMB file (default: None)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4,5,6,7}    choose the following number (1: mapping-related 2: TMB, 3: MSI, 4: SNV+INDEL, 5: sensitivity, 6: CNV, 7: CNV_Corr) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -o OUT_DIR            input output path (absolution path) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis)
+  -n JSON_NAME          input json filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/02_plot_robustness)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO) (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 03*py -h
+usage: 03_detect_vars_with_F1.py [-h] -t TABLE -i INDIR -l LEGEND [LEGEND ...] -b BAM_DIR [-o OUT_DIR] [-n XLSX_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t TABLE              input table with marker of variants (xlsx file)
+  -i INDIR              input vcf_path (absolute path)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header
+  -b BAM_DIR            input bam_path (absolute path)
+  -o OUT_DIR            input output path (absolution path)
+  -n XLSX_NAME          input xlsx filename(default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/[lotID]_SnvIndel_summary_table.xlsx)(You should include LotID)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 04*py -h
+usage: 04_venn_plot.py [-h] -i INDIR -l LEGEND [LEGEND ...] -y {1,2} -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-o OUT_DIR] [-n FIG_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INDIR              input vcf path or cnv variants summary file path (absolute path)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header
+  -y {1,2}              choose the following number (1: SNV+INDEL, 2: CNV)
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment
+  -x2 X2 [X2 ...]       input normal data based on the experiment
+  -o OUT_DIR            input output path (absolution path)
+  -n FIG_NAME           input xlsx filename(default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/04_venn_plot.png)(You should include LotID)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 05*py -h
+usage: 05_make_Cv_table.py [-h] -i1 INFILE1 [-i2 INFILE2] -l LEGEND [LEGEND ...] -y {1,2,3,4,5,6} -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-o OUT_DIR] [-n XLSX_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i1 INFILE1           input summary xlsx file (default: None)
+  -i2 INFILE2           input orientation bias filtered TMB file (default: None)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4,5,6}      choose the following number (1: TMB, 2: MSI, 3: SNV+INDEL, 4: sensitivity, 5: CNV, 6: CnvCorr) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -o OUT_DIR            input output path (absolution path) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis)
+  -n XLSX_NAME          input png filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/05_make_Cv_table)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO) (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 06*py -h
+usage: 06_plot_cnv_linearity.py [-h] -i INDIR [-l {TN,TO,Both}] [-g [GENE [GENE ...]]] -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-o OUT_DIR] [-n JSON_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INDIR              input cnv summary variant path (absolute path)
+  -l {TN,TO,Both}       input the following sample names (TN: Tumor-Normal, TO: Tumor-Only, Both: TN+TO) (default: Both)
+  -g [GENE [GENE ...]]  input gene name (default: MYCN, MET)
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment
+  -x2 X2 [X2 ...]       input normal data based on the experiment
+  -o OUT_DIR            input output path (absolution path)
+  -n JSON_NAME          input json filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/06_plot_cnv_linearity.json)(You should include LotID)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 07*py -h
+usage: 07_calc_cnvCorr.py [-h] -i INDIR -r ONCOSCAN [-o OUT_DIR] [-n FILE_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INDIR              input cnv summary variant path (absolute path)
+  -r ONCOSCAN           input OncoScan file (absolute path)
+  -o OUT_DIR            input output path (absolution path)
+  -n FILE_NAME          input json filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/07_calc_cnvCorr.json)(You should include LotID)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 08*py -h
+usage: 08_plot_cnvCorr.py [-h] -i INDIR -l LEGEND [LEGEND ...] -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-o OUT_DIR] [-n FILE_NAME] [-log {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INDIR              input cnv correlation summary path (absolute path)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment
+  -x2 X2 [X2 ...]       input normal data based on the experiment
+  -o OUT_DIR            input output path (absolution path)
+  -n FILE_NAME          input png filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/08_plot_cnvCorr.png)(You should include LotID)
+  -log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose log level (default: INFO)

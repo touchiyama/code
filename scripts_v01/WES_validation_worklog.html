@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WES_validation_worklog.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id=""></h1>
+<h1 id="wes%E3%83%90%E3%83%AA%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E5%8F%AF%E8%A6%96%E5%8C%96%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0v02-%E4%BD%9C%E6%A5%AD%E3%83%AD%E3%82%B0">WESバリデーション可視化プログラムv02 作業ログ</h1>
+<h1 id=""></h1>
+<p>・作業ディレクトリ <br>
+/NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis <br>
+・スクリプト格納場所 <br>
+/NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 <br></p>
+<p>(1) 多検体におけるmapping rate(%)とdepthの分布の可視化</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu scripts]$ <span class="hljs-built_in">pwd</span>
+ /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis
+
+[uchiyamat@gifu scripts]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 plot_parser.py -h
+usage: plot_parser.py [-h] -i INFILE -n NAME [NAME ...] -y {1,2,3,4,5,6} -x X [X ...] [-l {solid,dot,dash,longdash,dashdot,longdashdot}] [-c COLOR]
+                      [-f {none,tozeroy,tozerox,tonexty,tonextx,toself,tonext}] [-j JSON_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i INFILE             input file (default: None)
+  -n NAME [NAME ...]    input sample name based on the input data header (default: None)
+  -y {1,2,3,4,5,6}      choose the following number (1: mapping rate, 2: duplicate reads, 3: insert length(mean), 4: On-target reads, 5: depth(mean), 6: distribute <span class="hljs-keyword">for</span> depth) (default: None)
+  -x X [X ...]          input x-axis base on the experiment (default: None)
+  -l {solid,dot,dash,longdash,dashdot,longdashdot}
+                        input the following line_type (default: solid)
+  -c COLOR              input color (default: None)
+  -f {none,tozeroy,tozerox,tonexty,tonextx,toself,tonext}
+                        input the followomf fill_type (default: none)
+  -j JSON_NAME          input json filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/scripts/plot_parser.json)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                       choose <span class="hljs-built_in">log</span> level (default: INFO) (default: INFO)
+
+<span class="hljs-comment"># 多検体におけるmapping rate(%)</span>
+[uchiyamat@gifu scripts]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 plot_parser.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_map_summary.xlsx -n A01_CC1_tumor A02_EC1_tumor A03_EC2_tumor -y 1 -x 10 15 20 30 40 -j mapping_rate.json
+[uchiyamat@gifu scripts]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/script/make_line_chart.py -j mapping_rate.json -p mapping_rate --lwd 2
+
+<span class="hljs-comment"># 多検体におけるdepthの分布図</span>
+[uchiyamat@gifu scripts]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 plot_parser.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_depth_summary.xlsx -n A01_CC1_tumor A02_EC1_tumor A03_EC2_tumor -y 6 -x 10 15 20 30 40 -f tozeroy -j distribution.json
+[uchiyamat@gifu scripts]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/script/make_line_chart.py -j distribution.json -p distribution
+</div></code></pre>
+</blockquote>
+<p>(2) 多検体における総当たりグラフの可視化</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ <span class="hljs-built_in">pwd</span>
+  /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis
+
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 01_allPlot_parser.py -h
+usage: 01_allPlot_parser.py [-h] -i INFILE -n LEGEND [LEGEND ...] -y {1,2,3,4} -x1 X1 [X1 ...] -x2 X2 [X2 ...] [-j JSON_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i INFILE             input summary xlsx file (default: None)
+  -n LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4}          choose the following number (1: TMB, 2: MSI, 3: SNV+INDEL, 4: CNV) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -j JSON_NAME          input json filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/01_allPlot_parser)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose <span class="hljs-built_in">log</span> level (default: INFO) (default: INFO)
+
+<span class="hljs-comment"># TMB対応jsonファイルの作成</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 01_allPlot_parser.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_tmb_all_summary.xlsx -n A02_EC1_TN -y 1 -x1 40 80 120 -x2 10 20 30 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+
+<span class="hljs-comment"># MSI対応jsonファイルの作成</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 01_allPlot_parser.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_msi_all_summary.xlsx -n A02_EC1_TN -y 2 -x1 40 80 120 -x2 10 20 30 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+
+<span class="hljs-comment"># SNV, INDEL, SNV+INDEL対応jsonファイルの作成</span>
+<span class="hljs-comment"># ファイルの作成前にSNV, INDEL, SNV+INDELの数をrun_vcftools_indelSnv.pyで検出。</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 run_vcftools_indelSnv.py -h
+usage: run_vcftools_indelSnv.py [-h] -i IN_DIR -o OUT_DIR [-n SH_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i IN_DIR             input vcf path (absolution path) (default: None)
+  -o OUT_DIR            input output path (absolution path) (default: None)
+  -n SH_NAME            input shell filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/run_vcftools_indelSnv_20210922.sh)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                       choose <span class="hljs-built_in">log</span> level (default: INFO) (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 run_vcftools_indelSnv.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/260_Somatic_Call/04_snpeff -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/260_Somatic_Call/04_snpeff/pass_variants
+
+<span class="hljs-comment"># ファイルの作成前に各種変異数を記載したsummary.xlsxをmake_table.pyで作成。</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 make_table.py -h
+usage: make_table.py [-h] -l LOTID -i INDIR [-o OUTDIR] [-n XLSX_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -l LOTID              input lotID
+  -i INDIR              input vcf file path (absolute path)
+  -o OUTDIR             input output path(default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis)
+  -n XLSX_NAME          input xlsx filename(default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/[lotID]_summary.xlsx)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose <span class="hljs-built_in">log</span> level (default: INFO)
+
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 make_table.py -l PC0131 -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/260_Somatic_Call/04_snpeff/pass_variants -o  /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis -n PC0131_snvIndel_summary.xlsx
+
+<span class="hljs-comment"># jsonファイルの作成</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 01_allPlot_parser.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_snvIndel_all_summary.xlsx -n A02_EC1_TN -y 3 -x1 40 80 120 -x2 10 20 30 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+</div></code></pre>
+</blockquote>
+<p>(3) 他検体における頑健性グラフの可視化</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ <span class="hljs-built_in">pwd</span>
+  /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis
+
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 02_specificPlot_perser.py -h
+usage: 02_specificPlot_perser.py [-h] -i1 INFILE1 [-i2 INFILE2] -n LEGEND [LEGEND ...] -y {1,2,3,4} -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-j JSON_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i1 INFILE1           input summary xlsx file (default: None)
+  -i2 INFILE2           input orientation bias filtered TMB file (default: None)
+  -n LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4}          choose the following number (1: TMB, 2: MSI, 3: SNV+INDEL, 4: CNV) (default: None)
+  -x1 X1 [X1 ...]       tumor_data or x-axis based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -j JSON_NAME          input json filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/02_specificPlot_perser)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose <span class="hljs-built_in">log</span> level (default: INFO) (default: INFO)
+
+<span class="hljs-comment"># TMB対応jsonファイルの作成</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 02_specificPlot_perser.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_tmb_all_summary.xlsx -i2 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_tmb_OBF_all_summary.xlsx -n A02_EC1_TN -y 1 -x1 40 80 120 -x2 10 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+
+<span class="hljs-comment"># MSI対応jsonファイルの作成</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 02_specificPlot_perser.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_msi_all_summary.xlsx -n A02_EC1_TN -y 2 -x1 40 80 120 -x2 10 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+
+<span class="hljs-comment"># SNV, INDEL, SNV+INDEL対応jsonファイルの作成</span>
+ [uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 02_specificPlot_perser.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_snvIndel_all_summary.xlsx -n A02_EC1_TN -y 3 -x1 40 80 120 -x2 10 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+</div></code></pre>
+</blockquote>
+<p>(4) F1と比較したmarker variantの対応表の作成</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ <span class="hljs-built_in">pwd</span>
+  /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis
+
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 03_detect_vars_with_F1.py -h
+usage: 03_detect_vars_with_F1.py [-h] -t TABLE -i INDIR -l LEGEND [LEGEND ...] -b BAM_DIR [-n XLSX_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -t TABLE              input table with marker of variants (xlsx file)
+  -i INDIR              input vcf_path (absolute path)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header
+  -b BAM_DIR            input bam_path (absolute path)
+  -n XLSX_NAME          input xlsx filename(default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/[lotID]_SnvIndel_summary_table.xlsx)(You should include LotID)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose <span class="hljs-built_in">log</span> level (default: INFO)
+
+<span class="hljs-comment"># 対応表の作成</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 03_detect_vars_with_F1.py -t /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_markerVars_table.xlsx -i /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/260_Somatic_Call/04_snpeff -l A01_CC1_TN A02_EC1_TN A03_EC2_TN A01_CC1_TO A02_EC1_TO A03_EC2_TO -b /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/200_GENOME_DNA-ABC/250_MUTATION/DRAGEN -n /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+
+<span class="hljs-comment"># 多検体における総当たりグラフの可視化(改修版)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 01_allPlot_parser.py -h
+usage: 01_allPlot_parser.py [-h] -i INFILE -l LEGEND [LEGEND ...] -y {1,2,3,4,5} -x1 X1 [X1 ...] -x2 X2 [X2 ...] [-j JSON_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i INFILE             input summary xlsx file (default: None)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4,5}        choose the following number (1: TMB, 2: MSI, 3: SNV+INDEL, 4: sensitivity, 5: CNV) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -j JSON_NAME          input json filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/01_allPlot_parser)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                       choose <span class="hljs-built_in">log</span> level (default: INFO) (default: INFO)
+
+<span class="hljs-comment"># 感度（%）対応jsonファイルの作成 (PC0131_detection_TN_[tumor/normal].json)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 01_allPlot_parser.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131_all_SnvIndel_summary_table.xlsx -l A02_EC1_TN -y 4 -x1 40 80 120 -x2 10 20 30 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+
+<span class="hljs-comment"># 他検体における頑健性グラフの可視化(改修版)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 02_specificPlot_perser.py -h
+usage: 02_specificPlot_perser.py [-h] -i1 INFILE1 [-i2 INFILE2] -l LEGEND [LEGEND ...] -y {1,2,3,4,5} -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-j JSON_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i1 INFILE1           input summary xlsx file (default: None)
+  -i2 INFILE2           input orientation bias filtered TMB file (default: None)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4,5}        choose the following number (1: TMB, 2: MSI, 3: SNV+INDEL, 4: sensitivity, 5: CNV) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -j JSON_NAME          input json filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/02_specificPlot_perser)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                       choose <span class="hljs-built_in">log</span> level (default: INFO) (default: INFO)
+
+<span class="hljs-comment"># 感度（%）対応jsonファイルの作成(PC0131_detection_TN_robustness.json)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 02_specificPlot_perser.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131_all_SnvIndel_summary_table.xlsx -l A02_EC1_TN -y 4 -x1 40 80 120 -x2 10 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+</div></code></pre>
+</blockquote>
+<p>(5) ベン図の作成</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 04_venn_plot.py -h
+usage: 04_venn_plot.py [-h] -i INDIR -l LEGEND [LEGEND ...] [-x1 X1 [X1 ...]] [-x2 X2 [X2 ...]] -o OUT_DIR [-n FIG_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i INDIR              input vcf_path (absolute path)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header
+  -x1 X1 [X1 ...]       input data1 based on the experiment
+  -x2 X2 [X2 ...]       input data2 based on the experiment
+  -o OUT_DIR            input output path (absolution path)
+  -n FIG_NAME           input xlsx filename(default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/04_venn_plot.png)(You should include LotID)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                       choose <span class="hljs-built_in">log</span> level (default: INFO)
+
+<span class="hljs-comment"># 室内再現精度のベン図（3検体)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 04_venn_plot.py -i /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/260_Somatic_Call/04_snpeff -l A02_EC1_TN B04_EC1_TN C01_EC1_TN -x1 40 -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131_EC1_TN_1
+
+<span class="hljs-comment"># 頑健性のベン図（4検体)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 04_venn_plot.py -i /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/260_Somatic_Call/04_snpeff -l B02_EC1_TN B04_EC1_TN B05_EC1_TN B07_EC1_TN -x1 40 -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131_EC1_TN_2
+</div></code></pre>
+</blockquote>
+<p>(6) 検出変異数の室内再現精度、頑健性</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 05_make_Cv_table.py -h
+usage: 05_make_Cv_table.py [-h] -i1 INFILE1 [-i2 INFILE2] -l LEGEND [LEGEND ...] -y {1,2,3,4,5} -x1 X1 [X1 ...] [-x2 X2 [X2 ...]] [-n XLSX_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i1 INFILE1           input summary xlsx file (default: None)
+  -i2 INFILE2           input orientation bias filtered TMB file (default: None)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header (default: None)
+  -y {1,2,3,4,5}        choose the following number (1: TMB, 2: MSI, 3: SNV+INDEL, 4: sensitivity, 5: CNV) (default: None)
+  -x1 X1 [X1 ...]       input tumor_data or x-axis based on the experiment (default: None)
+  -x2 X2 [X2 ...]       input normal data based on the experiment (default: None)
+  -n XLSX_NAME          input xlsx filename (You should include LotID) (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/05_make_Cv_table)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose <span class="hljs-built_in">log</span> level (default: INFO) (default: INFO)
+
+ <span class="hljs-comment"># TMB</span>
+ [uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 05_make_Cv_table.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_tmb_summary.xlsx -i2 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_tmb_OBF_summary.xlsx -l A02_EC1_TN B04_EC1_TN C01_EC1_TN A02_EC1_TO B04_EC1_TO C01_EC1_TO -y 1 -x1 10 15 20 30 40 -n /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+ <span class="hljs-comment"># SNV, INDEL</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 05_make_Cv_table.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_snvIndel_summary.xlsx -l A02_EC1_TN B04_EC1_TN C01_EC1_TN A02_EC1_TO B04_EC1_TO C01_EC1_TO -y 3 -x1 10 15 20 30 40 -n /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+</div></code></pre>
+</blockquote>
+<p>(7) CNVベン図の作成（04_venn_plot.pyの改修版）</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 04_venn_plot.py -h
+usage: 04_venn_plot.py [-h] -i INDIR -l LEGEND [LEGEND ...] -y {1,2} [-x1 X1 [X1 ...]] [-x2 X2 [X2 ...]] -o OUT_DIR [-n FIG_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+ -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+ -i INDIR              input vcf path or cnv variants summary file path (absolute path)
+ -l LEGEND [LEGEND ...]
+                       input sample name based on the input data header
+ -y {1,2}              choose the following number (1: SNV+INDEL, 2: CNV)
+ -x1 X1 [X1 ...]       input data1 based on the experiment
+ -x2 X2 [X2 ...]       input data2 based on the experiment
+ -o OUT_DIR            input output path (absolution path)
+ -n FIG_NAME           input xlsx filename(default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/04_venn_plot.png)(You should include LotID)
+ -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                       choose <span class="hljs-built_in">log</span> level (default: INFO)
+
+
+<span class="hljs-comment">#室内再現精度</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 04_venn_plot.py -i /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table -y 2 -l A02_EC1_TN B04_EC1_TN C01_EC1_TN -x1 40 -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131_EC1_TN_CNV_1
+<span class="hljs-comment">#出力ファイル: PC0131_EC1_TN_CNV_1.png</span>
+
+<span class="hljs-comment">#頑健性1</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 04_venn_plot.py -i /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table -y 2 -l B01_EC1_TN B02_EC1_TN -x1 40 -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131_EC1_TN_CNV_2
+<span class="hljs-comment">#出力ファイル: PC0131_EC1_TN_CNV_2.png</span>
+
+<span class="hljs-comment">#頑健性2</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 04_venn_plot.py -i /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table -y 2 -l B02_EC1_TO B04_EC1_TO B05_EC1_TO B07_EC1_TO -x1 40 -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131_EC1_TN_CNV_3
+<span class="hljs-comment">#出力ファイル: PC0131_EC1_TN_CNV_3.png</span>
+</div></code></pre>
+</blockquote>
+<p>(8) CNV直線性グラフの作成</p>
+<blockquote>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 06_plot_cnv_linearity.py -h
+usage: 06_plot_cnv_linearity.py [-h] -i INDIR -l {TN,TO,Both} -g [GENE [GENE ...]] [-x1 X1 [X1 ...]] [-x2 X2 [X2 ...]] -o OUT_DIR [-n JSON_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+ -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i INDIR              input cnv summary variant path (absolute path)
+  -l {TN,TO,Both}       input the following sample names (TN: Tumor-Normal, TO: Tumor-Only, Both: TN+TO) (default: Both)
+  -g [GENE [GENE ...]]  input gene name (default: MYCN, MET)
+  -x1 X1 [X1 ...]       input data1 based on the experiment
+  -x2 X2 [X2 ...]       input data2 based on the experiment
+  -o OUT_DIR            input output path (absolution path)
+  -n JSON_NAME          input json filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/06_plot_cnv_linearity.json)(You should include LotID)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose <span class="hljs-built_in">log</span> level (default: INFO)
+
+<span class="hljs-comment">#jsonファイルの作成 </span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/python3 06_plot_cnv_linearity.py -i /<span class="hljs-built_in">export</span>/home/uchiyamat/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table -x1 10 15 20 30 40 -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131
+</div></code></pre>
+</blockquote>
+<p>(9) Dragen CNVとOncoScan CNV間の相関係数の算出</p>
+<blockquote>
+<p>・以下の指定された解析環境のopenpyxlで、/NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_CNV.xlsxが読込めなかったので以下の2つの作業を行った。<br>
+　/NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/　<br>
+<br>
+(1) xlrdをインストール <br></p>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/pip install xlrd
+</div></code></pre>
+<p>(2) pandasのバージョンを、v1.1.3 → v1.3.3にアップグレード <br></p>
+<pre class="hljs"><code><div>[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/envs/py38/bin/pip install -U pandas
+
+<span class="hljs-comment"># 解析パッケージ一覧（2021/10/12時点）</span>
+[uchiyamat@gifu WES_valdation_Vis]$ /NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/&gt; envs/py38/bin/pip list
+Package                Version
+---------------------- -------------------
+brotlipy               0.7.0
+certifi                2021.5.30
+cffi                   1.14.6
+chardet                4.0.0
+conda                  4.10.3
+conda-package-handling 1.7.3
+cryptography           3.4.7
+cycler                 0.10.0
+et-xmlfile             1.0.1
+idna                   2.10
+jdcal                  1.4.1
+joblib                 1.0.1
+kaleido                0.2.1
+kiwisolver             1.3.2
+matplotlib             3.4.3
+numpy                  1.19.1
+openpyxl               3.0.5
+pandas                 1.3.3
+Pillow                 8.3.2
+pip                    21.2.2
+plotly                 5.2.2
+psutil                 5.8.0
+pycosat                0.6.3
+pycparser              2.20
+pyOpenSSL              20.0.1
+pyparsing              2.4.7
+PySocks                1.7.1
+python-dateutil        2.8.1
+pytz                   2020.1
+PyYAML                 5.3.1
+requests               2.25.1
+ruamel-yaml-conda      0.15.100
+scikit-learn           0.24.2
+scipy                  1.6.2
+seaborn                0.11.2
+setuptools             52.0.0.post20210125
+six                    1.16.0
+tenacity               8.0.0
+threadpoolctl          2.2.0
+tqdm                   4.62.1
+urllib3                1.26.6
+wheel                  0.37.0
+xlrd                   2.0.1
+</div></code></pre>
+<p>実行</p>
+<pre class="hljs"><code><div><span class="hljs-comment">#解析環境の設定</span>
+[uchiyamat@gifu WES_valdation_Vis]$ <span class="hljs-built_in">export</span> PATH=/NGSWORK/NGS/DOCUMENT/SOP/GA/SOP-42_Validation/program/wes_validation/environment/miniconda/bin/:<span class="hljs-variable">$PATH</span>
+
+[uchiyamat@gifu WES_valdation_Vis]$ python3 08_plot_cnvCorr.py -h
+usage: 08_plot_cnvCorr.py [-h] -i INDIR -l LEGEND [LEGEND ...] [-x1 X1 [X1 ...]] [-x2 X2 [X2 ...]] -o OUT_DIR [-n FILE_NAME] [-<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Some useful program commands are:
+
+optional arguments:
+  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span>
+  -i INDIR              input cnv correlation summary path (absolute path)
+  -l LEGEND [LEGEND ...]
+                        input sample name based on the input data header
+  -x1 X1 [X1 ...]       input data1 based on the experiment
+  -x2 X2 [X2 ...]       input data2 based on the experiment
+  -o OUT_DIR            input output path (absolution path)
+  -n FILE_NAME          input png filename (default: /NGSWORK/TEST/TEST_UCHIYAMA/WES_valdation_Vis/08_plot_cnvCorr.png)(You should include LotID)
+  -<span class="hljs-built_in">log</span> {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        choose <span class="hljs-built_in">log</span> level (default: INFO)
+
+
+<span class="hljs-comment"># 相関係数の算出</span>
+[uchiyamat@gifu WES_valdation_Vis]$ python3 07_calc_cnvCorr.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table -r /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/PC0131_CNV.xlsx -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131
+<span class="hljs-comment">#出力ディレクトリ： /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table/cmpCnv_table</span>
+<span class="hljs-comment">#出力ファイル: [sample_ID]_cmpCnv_table.xlsx（各サンプル）, PC0131_cnvCorr_summary.xlsx（全サンプルの総まとめ）</span>
+
+<span class="hljs-comment"># 他検体に対応した複数散布図の作成</span>
+[uchiyamat@gifu WES_valdation_Vis]$ python3 08_plot_cnvCorr.py -i /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table/cmpCnv_table -l A01_CC1_PN A01_CC1_TN A01_CC1_TO -x1 10 15 20 30 40 -o /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02 -n PC0131
+<span class="hljs-comment">#出力ファイル: PC0131_cnvCorr_float.html, PC0131_cnvCorr_float.png, PC0131_cnvCorr_int.html, PC0131_cnvCorr_int.png</span>
+
+<span class="hljs-comment"># 相関係数の変動係数の算出　(05_make_Cv_table.pyの利用)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ python3 05_make_Cv_table.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table/cmpCnv_table/PC0131_cnvCorr_summary.xlsx -l A02_EC1_TN B04_EC1_TN C01_EC1_TN A02_EC1_TO B04_EC1_TO C01_EC1_TO -y 6 -x1 10 15 20 30 40 -n /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+<span class="hljs-comment">#出力ファイル: PC0131_CnvCorr_Cv_table.xlsx</span>
+
+<span class="hljs-comment"># 相関係数推移グラフに対応したjsonの出力　(02_plot_robustness.pyの利用)</span>
+[uchiyamat@gifu WES_valdation_Vis]$ python3 02_plot_robustness.py -i1 /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/270_CNV/02_make_table/cmpCnv_table/PC0131_cnvCorr_summary.xlsx -l A01_CC1_PN A01_CC1_TN A01_CC1_TO -y 6 -x1 10 15 20 30 40 -j /NGSWORK/PROJECT/PC0131/240_GENOME_WES_Vis/scripts_v02/PC0131
+<span class="hljs-comment">#出力ファイル: PC0131_CnvCorr_int_PN_TO_TN_robustness.json, PC0131_CnvCorr_flt_PN_TO_TN_robustness.json</span>
+</div></code></pre>
+</blockquote>
+
+</body>
+</html>
