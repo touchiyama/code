@@ -611,7 +611,3 @@ fig.update_traces(marker=dict(size=1))
 fig.add_traces(go.Surface(x=xrange, y=yrange, z=pred, name='pred_surface'))
 fig.show()
 
-# %%
-df = px.data.iris()
-print(df)
-# %%
