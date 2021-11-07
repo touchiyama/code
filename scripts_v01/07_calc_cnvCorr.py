@@ -104,7 +104,7 @@ class get_CN:
                                 ID = sample + ',' + locus
                                 Dragen[ID] = df.loc[i, 'SV Type'] + ',' + str(df.loc[i, 'CN'])
                                 #======== preparation for exploring the overlap CNV region between DG and OS ========#
-                                cmp_DG_OS[locus] = '-,' + df.loc[i, 'SV Type'] + ',' + str(df.loc[i, 'CN']) + ',-,' + str(2.00) + ',' + str(2) + ',NO' 
+                                cmp_DG_OS[locus] = '-,' + df.loc[i, 'SV Type'] + ',' + str(df.loc[i, 'CN']) + ',-,' + str(2.00) + ',' + str(2) + ',NO'
 
         return Dragen, cmp_DG_OS
 
@@ -154,7 +154,7 @@ class calc_corr_with_OncoScan(get_CN):
                     if (dg_ed < os_st) | (os_ed < dg_st):
                         pass
                     else:
-                        cmp_DG_OS[dg_loc] = os_loc + ',' + dg_cn + ',' + OncoScan[os_ID]  + ',YES'
+                        cmp_DG_OS[dg_id] = os_loc + ',' + dg_cn + ',' + OncoScan[os_ID]  + ',YES'
                         overlp_id = sample + ',' + os_ID
                         overlp_OS[overlp_id] = '-'
 
