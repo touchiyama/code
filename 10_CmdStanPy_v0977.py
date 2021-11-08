@@ -194,7 +194,8 @@ fig.update_yaxes(title='Plate row')
 
 fig.update_layout(
     title='384 plate (2Dmesh) ',
-    xaxis_nticks=36)
+    xaxis_nticks=36
+)
 
 fig.show()
 
@@ -220,7 +221,8 @@ fig.update_yaxes(title='Plate row')
 
 fig.update_layout(
     title='384 plate (2Dmesh_design)',
-    xaxis_nticks=36)
+    xaxis_nticks=36
+)
 
 fig.show()
 
@@ -361,7 +363,13 @@ print(init)
 # MCMC sampling (NUTS method)
 #--------------------------------------
 
-fit = sm.sample(data=json_file, iter_warmup=500, thin=5, seed=1234, inits=init)
+fit = sm.sample(
+    data=json_file,
+    iter_warmup=500,
+    thin=5,
+    seed=1234,
+    inits=init
+)
 
 # %%
 #--------------------------------------
@@ -458,16 +466,25 @@ xrange = np.arange(0, I, mesh_size)
 yrange = np.arange(0, J, mesh_size)
 
 fig = px.scatter_3d(d_melt, x='Plate Column', y='Plate Row', z='Y')
-fig.update_traces(marker=dict(size=1.0,
-                              line=dict(width=0.5,color='DarkSlateGrey'),
-                              color='white'),
-                  selector=dict(mode='markers'))
-fig.add_traces(go.Surface(z=r_mean, colorscale='Viridis',
-                          colorbar=dict(title='pred_Y_value')))
-
+fig.update_traces(
+    marker=dict(
+        size=1.0,
+        line=dict(width=0.5, color='DarkSlateGrey'),
+        color='white'
+    ),
+    selector=dict(mode='markers')
+)
+fig.add_traces(
+    go.Surface(
+        z=r_mean,
+        colorscale='Viridis',
+        colorbar=dict(title='pred_Y_value')
+    )
+)
 fig.update_layout(
     title='statistic modeling (2D_mesh)',
-    xaxis_nticks=36)
+    xaxis_nticks=36
+)
 
 fig.show()
 
@@ -550,12 +567,13 @@ min_x = -0.2
 max_y = cons_data.describe().loc['max', :].max() + 3
 min_y = 0
 
-fig = make_subplots(rows=n_row,
-                    cols=n_col,
-                    subplot_titles=titles,
-                    horizontal_spacing=0.1  # will change
-                    #vertical_spacing=0.15     # will change
-                    )
+fig = make_subplots(
+    rows=n_row,
+    cols=n_col,
+    subplot_titles=titles,
+    horizontal_spacing=0.1  # will change
+    #vertical_spacing=0.15     # will change
+)
 
 ii = -1
 for i in range(1, n_row+1):
@@ -564,42 +582,72 @@ for i in range(1, n_row+1):
 
         y = cons_data.iloc[ii, 1:]
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode='lines+markers', line=dict(color=colors[ii])),
-                    row=i,
-                    col=j)
-        fig.update_layout(plot_bgcolor='white',
-                        height=800,
-                        width=900)
-        fig.update_xaxes(title=x_title,
-                        showline=True,
-                        linewidth=1,
-                        linecolor='black',
-                        mirror=True,
-                        ticks='inside',
-                        range=(min_x, max_x),
-                        dtick=5,
-                        row=i,
-                        col=j)
-        fig.update_yaxes(title=y_title,
-                        showline=True,
-                        linewidth=1,
-                        linecolor='black',
-                        mirror=True,
-                        ticks='inside',
-                        range=(min_y, max_y),
-                        dtick=5,
-                        row=i,
-                        col=j)
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode='lines+markers',
+                line=dict(color=colors[ii])
+            ),
+            row=i,
+            col=j
+        )
+        fig.update_layout(
+            plot_bgcolor='white',
+            height=800,
+            width=900
+        )
+        fig.update_xaxes(
+            title=x_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_x, max_x),
+            dtick=5,
+            row=i,
+            col=j
+        )
+        fig.update_yaxes(
+            title=y_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_y, max_y),
+            dtick=5,
+            row=i,
+            col=j
+        )
 
-fig.for_each_xaxis(lambda axis: axis.title.update(font=dict(color='black', size=10)))
-fig.for_each_yaxis(lambda axis: axis.title.update(font=dict(color='black', size=10)))
-
-fig.update_layout(title=dict(text=main_title,
-                             x=0.5,
-                             xanchor='center'),
-                  showlegend=False)
-
-fig.update_annotations(font=dict(size=10))
+fig.for_each_xaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
+fig.for_each_yaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
+fig.update_layout(
+    title=dict(
+        text=main_title,
+        x=0.5,
+        xanchor='center'),
+        showlegend=False
+)
+fig.update_annotations(
+    font=dict(size=10)
+)
 
 # %%
 #--------------------------------------
@@ -707,7 +755,14 @@ print(sm.code())
 # MCMC sampling (NUTS method)
 #--------------------------------------
 
-fit = sm.sample(data=json_file, chains=3, iter_sampling=2500, iter_warmup=500, thin=5, seed=1234)
+fit = sm.sample(
+    data=json_file,
+    chains=3,
+    iter_sampling=2500,
+    iter_warmup=500,
+    thin=5,
+    seed=1234
+)
 
 # %%
 #--------------------------------------
@@ -902,12 +957,13 @@ min_x = -0.2
 max_y = wide_df.describe().loc['max', :].max() + 3
 min_y = 0
 
-fig = make_subplots(rows=n_row,
-                    cols=n_col,
-                    subplot_titles=titles,
-                    horizontal_spacing=0.1  # will change
-                    #vertical_spacing=0.15     # will change
-                    )
+fig = make_subplots(
+    rows=n_row,
+    cols=n_col,
+    subplot_titles=titles,
+    horizontal_spacing=0.1  # will change
+    #vertical_spacing=0.15     # will change
+)
 
 ii = -1
 for i in range(1, n_row+1):
@@ -917,42 +973,72 @@ for i in range(1, n_row+1):
         y = proc_df.loc[ii, 'Y']
         x = proc_df.loc[ii, 'Time']
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode='lines+markers', line=dict(color=colors[ii])),
-                    row=i,
-                    col=j)
-        fig.update_layout(plot_bgcolor='white',
-                        height=800,
-                        width=900)
-        fig.update_xaxes(title=x_title,
-                        showline=True,
-                        linewidth=1,
-                        linecolor='black',
-                        mirror=True,
-                        ticks='inside',
-                        range=(min_x, max_x),
-                        dtick=5,
-                        row=i,
-                        col=j)
-        fig.update_yaxes(title=y_title,
-                        showline=True,
-                        linewidth=1,
-                        linecolor='black',
-                        mirror=True,
-                        ticks='inside',
-                        range=(min_y, max_y),
-                        dtick=5,
-                        row=i,
-                        col=j)
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode='lines+markers',
+                line=dict(color=colors[ii])
+            ),
+            row=i,
+            col=j
+        )
+        fig.update_layout(
+            plot_bgcolor='white',
+            height=800,
+            width=900
+        )
+        fig.update_xaxes(
+            title=x_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_x, max_x),
+            dtick=5,
+            row=i,
+            col=j
+        )
+        fig.update_yaxes(
+            title=y_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_y, max_y),
+            dtick=5,
+            row=i,
+            col=j
+        )
 
-fig.for_each_xaxis(lambda axis: axis.title.update(font=dict(color='black', size=10)))
-fig.for_each_yaxis(lambda axis: axis.title.update(font=dict(color='black', size=10)))
-
-fig.update_layout(title=dict(text=main_title,
-                             x=0.5,
-                             xanchor='center'),
-                  showlegend=False)
-
-fig.update_annotations(font=dict(size=10))
+fig.for_each_xaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
+fig.for_each_yaxis(
+    lambda axis: axis.title.update(
+        font=dict(color='black',
+        size=10
+        )
+    )
+)
+fig.update_layout(
+    title=dict(
+        text=main_title,
+        x=0.5,
+        xanchor='center'
+    ),
+    showlegend=False
+)
+fig.update_annotations(
+    font=dict(size=10)
+)
 
 # %%
 #--------------------------------------
@@ -1070,7 +1156,14 @@ print(sm.code())
 # MCMC sampling (NUTS method)
 #--------------------------------------
 
-fit_na = sm.sample(data=json_file, chains=3, iter_sampling=2500, iter_warmup=500, thin=5, seed=1234)
+fit_na = sm.sample(
+    data=json_file,
+    chains=3,
+    iter_sampling=2500,
+    iter_warmup=500,
+    thin=5,
+    seed=1234
+)
 
 # %%
 #--------------------------------------
@@ -1250,12 +1343,13 @@ min_y = 0
 probs = (10, 25, 50, 75, 90)
 pxx = [f'p{p}' for p in probs]
 
-fig = make_subplots(rows=n_row,
-                    cols=n_col,
-                    subplot_titles=titles,
-                    horizontal_spacing=0.1  # will change
-                    #vertical_spacing=0.15     # will change
-                    )
+fig = make_subplots(
+    rows=n_row,
+    cols=n_col,
+    subplot_titles=titles,
+    horizontal_spacing=0.1  # will change
+    #vertical_spacing=0.15     # will change
+)
 
 ii = -1
 for i in range(1, n_row+1):
@@ -1332,20 +1426,33 @@ for i in range(1, n_row+1):
                         row=i,
                         col=j)
 
-fig.for_each_xaxis(lambda axis: axis.title.update(
-    font=dict(color='black', size=10)))
-fig.for_each_yaxis(lambda axis: axis.title.update(
-    font=dict(color='black', size=10)))
-
+fig.for_each_xaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
+fig.for_each_yaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
 fig.update_layout(
     title=dict(
         text=main_title,
         x=0.5,
         xanchor='center'
     ),
-    showlegend=False)
-
-fig.update_annotations(font=dict(size=10))
+    showlegend=False
+)
+fig.update_annotations(
+    font=dict(size=10)
+)
 
 # %%
 #--------------------------------------------
@@ -1493,12 +1600,13 @@ min_y = 0
 probs = (10, 25, 50, 75, 90)
 pxx = [f'p{p}' for p in probs]
 
-fig = make_subplots(rows=n_row,
-                    cols=n_col,
-                    subplot_titles=titles,
-                    horizontal_spacing=0.1  # will change
-                    #vertical_spacing=0.15     # will change
-                    )
+fig = make_subplots(
+    rows=n_row,
+    cols=n_col,
+    subplot_titles=titles,
+    horizontal_spacing=0.1  # will change
+    #vertical_spacing=0.15     # will change
+)
 
 ii = -1
 for i in range(1, n_row+1):
@@ -1511,81 +1619,108 @@ for i in range(1, n_row+1):
 
         # fill area between trace0 and trace1
         for k in range(2):
-            fig.add_trace(go.Scatter(
-                x=pre_x,
-                y=pred_df.loc[ii, pxx[k]],
-                fill=None,
-                mode='lines',
-                line=dict(color='black', width=0.4),
-                opacity=0.2*(k+1)
+            fig.add_trace(
+                go.Scatter(
+                    x=pre_x,
+                    y=pred_df.loc[ii, pxx[k]],
+                    fill=None,
+                    mode='lines',
+                    line=dict(color='black', width=0.4),
+                    opacity=0.2*(k+1)
                 ),
                 row=i,
-                col=j)
-            fig.add_trace(go.Scatter(
-                x=pre_x,
-                y=pred_df.loc[ii, pxx[-k-1]],
-                fill='tonexty',
-                mode='lines',
-                line=dict(color='black', width=0.4),
-                opacity=0.2*(k+1)
+                col=j
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=pre_x,
+                    y=pred_df.loc[ii, pxx[-k-1]],
+                    fill='tonexty',
+                    mode='lines',
+                    line=dict(color='black', width=0.4),
+                    opacity=0.2*(k+1)
                 ),
                 row=i,
-                col=j)
-        fig.add_trace(go.Scatter(
-            x=pre_x,
-            y=pre_y,
-            mode='lines',
-            line=dict(color=colors[ii], width=2)
+                col=j
+            )
+        fig.add_trace(
+            go.Scatter(
+                x=pre_x,
+                y=pre_y,
+                mode='lines',
+                line=dict(color=colors[ii], width=2)
             ),
             row=i,
-            col=j)
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=y,
-            mode='markers',
-            marker=dict(
-                color=colors[ii],
-                size=5,
-                line=dict(color='black', width=1)
+            col=j
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode='markers',
+                marker=dict(
+                    color=colors[ii],
+                    size=5,
+                    line=dict(color='black', width=1)
                 )
             ),
             row=i,
-            col=j)
-        fig.update_layout(plot_bgcolor='white',
-                        height=800,
-                        width=900)
-        fig.update_xaxes(title=x_title,
-                        showline=True,
-                        linewidth=1,
-                        linecolor='black',
-                        mirror=True,
-                        ticks='inside',
-                        range=(min_x, max_x),
-                        dtick=5,
-                        row=i,
-                        col=j)
-        fig.update_yaxes(title=y_title,
-                        showline=True,
-                        linewidth=1,
-                        linecolor='black',
-                        mirror=True,
-                        ticks='inside',
-                        range=(min_y, max_y),
-                        dtick=5,
-                        row=i,
-                        col=j)
+            col=j
+        )
+        fig.update_layout(
+            plot_bgcolor='white',
+            height=800,
+            width=900
+        )
+        fig.update_xaxes(
+            title=x_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_x, max_x),
+            dtick=5,
+            row=i,
+            col=j
+        )
+        fig.update_yaxes(
+            title=y_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_y, max_y),
+            dtick=5,
+            row=i,
+            col=j
+        )
 
-fig.for_each_xaxis(lambda axis: axis.title.update(
-    font=dict(color='black', size=10)))
-fig.for_each_yaxis(lambda axis: axis.title.update(
-    font=dict(color='black', size=10)))
-
+fig.for_each_xaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
+fig.for_each_yaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
 fig.update_layout(
     title=dict(
         text=main_title,
         x=0.5,
         xanchor='center'
     ),
-    showlegend=False)
-
-fig.update_annotations(font=dict(size=10))
+    showlegend=False
+)
+fig.update_annotations(
+    font=dict(size=10)
+)
