@@ -619,4 +619,3 @@ fig.update_yaxes(
     dtick=20
 )
 fig.update_layout(showlegend=False)
-
