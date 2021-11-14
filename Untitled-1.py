@@ -238,3 +238,50 @@ fig.update_layout(title=dict(text='TEST',
 fig.show()
 
 # %%
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+#import plotly.express as px
+
+# %%
+
+indir = '/Users/tomoyauchiyama/code/scripts_v01'
+name = 'A02_EC2_TN_80_60_cmpCnv_table.xlsx'
+
+file = os.path.join(indir, name)
+
+df = pd.read_excel(file, engine='openpyxl', sheet_name=0)
+#x = df.loc[:, 'Dragen_CN'].to_numpy()
+x = df[df.loc[:, 'Overlap'] == 'YES'].loc[:, 'Dragen_CN'].to_numpy()
+#y = df.loc[:, 'OncoScan_CN'].to_numpy()
+y = df[df.loc[:, 'Overlap'] == 'YES'].loc[:, 'OncoScan_CN'].to_numpy()
+
+
+# %%
+fig = make_subplots()
+#fig = px.scatter(df, x="Dragen_CN", y="OncoScan_CN")
+fig.add_trace(go.Scatter(
+    x=x,
+    y=y,
+    mode='markers',
+    marker=dict(
+        color=None,
+        size=3,
+        line=dict(color='DarkSlateGrey', width=1)
+    )
+    ))
+
+#fig.update_traces(marker=dict(size=2,line=dict(width=0.5, color='DarkSlateGrey')), selector=dict(mode='markers'))
+fig.update_layout(plot_bgcolor='white', height=600, width=600)
+fig.update_xaxes(title='Dragen_CN', showline=True, linewidth=1, linecolor='black', mirror=True, ticks='inside')
+fig.update_yaxes(title='OncoScan_CN', showline=True, linewidth=1, linecolor='black', mirror=True, ticks='inside')
+
+fig.show()
+
+# %%
+
+print(len(x))
+
+print(df.index.size)
+
+# %%
