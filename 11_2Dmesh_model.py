@@ -908,3 +908,13 @@ show_data2(ax, x, y, z)
 plt.show()
 
 # %%
+# ライブラリー結果のモデリング --------------------------------
+
+file = '/Users/tomoyauchiyama/code/PC0174_PC0131_LIB_summmary_211110.xlsx'
+lib_df = pd.read_excel(file).dropna(subset=['Depth_80Gb'])
+
+# %%
+pd.set_option('display.max_columns', None)
+print(lib_df)
+# %%
+
