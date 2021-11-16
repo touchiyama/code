@@ -921,7 +921,7 @@ print(lib_df)
 lib_df['d_Depth'] = lib_df['Depth_80Gb'] - lib_df['Depth_40Gb']
 
 # %%
-df1 = lib_df[lib_df['bs']=='BS0401_210929'].loc[:, ['batch','name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+df1 = lib_df[lib_df['batch']=='PC0174_A'].loc[:, ['batch','name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
 df2 = lib_df[lib_df['batch']=='PC0174_B'].loc[:, ['batch', 'name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
 df3 = lib_df[lib_df['batch']=='PC0174_C'].loc[:, ['batch', 'name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
 data = df1.append(df2).append(df3)
@@ -1011,10 +1011,12 @@ def fit_plane(x0, x1, t):
 # %%
 # 変数--------------------------------
 
-x = data['input'].astype('int64').to_numpy()
-y = data['frag_total'].astype('int64').to_numpy()
-z = data['d_Depth'].to_numpy()
-w = fit_plane(x, y, z)
+X = df1['input'].astype('int64').to_numpy()
+Y = df1['frag_total'].astype('int64').to_numpy()
+Z = df1['d_Depth'].to_numpy()
+w = fit_plane(X, Y, Z)
+
+print(w)
 
 # %%
 def mse_plane(x0, x1, t, w):
@@ -1022,9 +1024,11 @@ def mse_plane(x0, x1, t, w):
     mse = np.mean((y - t)**2)
     return mse
 
-mse = mse_plane(x, y, z, w)
-# %%
+mse = mse_plane(X, Y, Z, w)
+
 print(mse)
+print("SD={0:.2f}".format(np.sqrt(mse)))
+
 # %%
 import matplotlib.pyplot as plt
 
@@ -1035,8 +1039,8 @@ def show_data2(ax, x0, x1, t):
     ax.view_init(elev=35, azim=-75)
 
 def show_plane(ax, w):
-    px0 = np.linspace(0, 16, 5)
-    px1 = np.linspace(0, 24, 5)
+    px0 = np.linspace(0, max(X), 5)
+    px1 = np.linspace(0, max(Y), 5)
     px0, px1 = np.meshgrid(px0, px1)
     y = w[0]*px0 + w[1] * px1 + w[2]
     ax.plot_surface(px0, px1, y, rstride=1, cstride=1, alpha=0.3,
@@ -1045,7 +1049,7 @@ def show_plane(ax, w):
 plt.figure(figsize=(6, 5))
 ax = plt.subplot(1,1,1,projection='3d')
 show_plane(ax, w)
-show_data2(ax, x, y, z)
+show_data2(ax, X, Y, Z)
 plt.show()
 
 # %%
@@ -1063,6 +1067,15 @@ fig = px.scatter_3d(
     z='d_Depth',
     color='batch'
 )
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor = 'auto'
+    )
+)
 fig.update_traces(
     marker=dict(
         size=3.0,
@@ -1071,19 +1084,51 @@ fig.update_traces(
     ),
     selector=dict(mode='markers')
 )
-"""
+px0 = np.linspace(0, max(X), 5)
+px1 = np.linspace(0, max(Y), 5)
+px0, px1 = np.meshgrid(px0, px1)
+z = w[0]*px0 + w[1] * px1 + w[2]
 fig.add_traces(
     go.Surface(
-        z=mesh2D,
+        y=px0,
+        x=px1,
+        z=z,
         colorscale='Viridis',
-        colorbar=dict(title='2Dmesh_value')
+        colorbar=dict(title='d_depth')
     )
 )
-"""
+
 fig.update_layout(
     title='display 3D Surface Plots',
     xaxis_nticks=36
 )
+fig.update_layout(showlegend=True)
 
-fig.show()
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+htmlfile = os.path.join(
+    os.path.abspath('.'),
+    '3D_Surface_Plots.html'
+)
+fig.write_html(htmlfile)
+
 # %%
