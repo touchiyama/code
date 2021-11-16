@@ -916,5 +916,174 @@ lib_df = pd.read_excel(file).dropna(subset=['Depth_80Gb'])
 # %%
 pd.set_option('display.max_columns', None)
 print(lib_df)
-# %%
 
+# %%
+lib_df['d_Depth'] = lib_df['Depth_80Gb'] - lib_df['Depth_40Gb']
+
+# %%
+df1 = lib_df[lib_df['bs']=='BS0401_210929'].loc[:, ['batch','name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+df2 = lib_df[lib_df['batch']=='PC0174_B'].loc[:, ['batch', 'name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+df3 = lib_df[lib_df['batch']=='PC0174_C'].loc[:, ['batch', 'name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+data = df1.append(df2).append(df3)
+
+print(data)
+
+# %%
+df1 = lib_df[lib_df['bs']=='BS0401_210929'].loc[:, ['Depth_40Gb', 'Depth_80Gb']]
+df2 = lib_df[lib_df['batch']=='PC0174_B'].loc[:, ['Depth_40Gb', 'Depth_80Gb']]
+df3 = lib_df[lib_df['batch']=='PC0174_C'].loc[:, ['Depth_40Gb', 'Depth_80Gb']]
+data = df1.append(df2).append(df3)
+df_melt = pd.melt(data)
+
+print(df_melt)
+
+
+# %%
+# データ分布の可視化 --------------------------------
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1)
+
+sns.boxplot(
+    x='variable',
+    y='value',
+    data=df_melt,
+    showfliers=False,
+    width=0.4,
+    ax=ax
+)
+sns.stripplot(
+    x='variable',
+    y='value',
+    data=df_melt,
+    jitter=False,
+    color='black',
+    ax=ax,
+    size=3
+)
+plt.plot(
+    ['Depth_40Gb', 'Depth_80Gb'],
+    [data['Depth_40Gb'].to_list(), data['Depth_80Gb'].to_list()],
+    color = 'black',
+    linewidth = 1.0,
+    linestyle = '--'
+)
+ax.set_xlim(-0.5, 1.5)
+ax.set_ylim(0, data['Depth_80Gb'].max()+100)
+
+# %%
+# 対応のある2群の検定（Wilcoxonの符号付順位和検定）-----
+"""
+WilcoxonResult(statistic=0.0, pvalue=1.9073486328125e-06)
+Depthが80Gbの時、有意に上昇している
+"""
+import numpy as np
+from scipy import stats
+
+A = data['Depth_40Gb'].to_numpy()
+B = data['Depth_80Gb'].to_numpy()
+res = stats.wilcoxon(A, B)
+
+print(res)
+
+# %%
+print(data)
+
+# %%
+# -------------------------------------
+# 解析解によるモデリング
+# -------------------------------------
+
+# 解析解--------------------------------
+def fit_plane(x0, x1, t):
+    c_tx0 = np.mean(t * x0) - np.mean(t) * np.mean(x0)
+    c_tx1 = np.mean(t * x1) - np.mean(t) * np.mean(x1)
+    c_x0x1 = np.mean(x0 * x1) - np.mean(x0) * np.mean(x1)
+    v_x0 = np.var(x0)
+    v_x1 = np.var(x1)
+    w0 = (c_tx1 * c_x0x1 - v_x1 * c_tx0) / (c_x0x1**2 - v_x0 * v_x1)
+    w1 = (c_tx0 * c_x0x1 - v_x0 * c_tx1) / (c_x0x1**2 - v_x0 * v_x1)
+    w2 = -w0 * np.mean(x0) - w1 * np.mean(x1) + np.mean(t)
+    return np.array([w0, w1, w2])
+
+# %%
+# 変数--------------------------------
+
+x = data['input'].astype('int64').to_numpy()
+y = data['frag_total'].astype('int64').to_numpy()
+z = data['d_Depth'].to_numpy()
+w = fit_plane(x, y, z)
+
+# %%
+def mse_plane(x0, x1, t, w):
+    y = w[0] * x0 + w[1] * x1 + w[2]
+    mse = np.mean((y - t)**2)
+    return mse
+
+mse = mse_plane(x, y, z, w)
+# %%
+print(mse)
+# %%
+import matplotlib.pyplot as plt
+
+def show_data2(ax, x0, x1, t):
+    ax.plot(x0, x1, t, 'o',
+            color='cornflowerblue', markeredgecolor='black',
+            markersize=6)
+    ax.view_init(elev=35, azim=-75)
+
+def show_plane(ax, w):
+    px0 = np.linspace(0, 16, 5)
+    px1 = np.linspace(0, 24, 5)
+    px0, px1 = np.meshgrid(px0, px1)
+    y = w[0]*px0 + w[1] * px1 + w[2]
+    ax.plot_surface(px0, px1, y, rstride=1, cstride=1, alpha=0.3,
+                    color='blue', edgecolor='black')
+
+plt.figure(figsize=(6, 5))
+ax = plt.subplot(1,1,1,projection='3d')
+show_plane(ax, w)
+show_data2(ax, x, y, z)
+plt.show()
+
+# %%
+# 3D Surface Plots with plotly -------------------------------
+import plotly.express as px
+
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    data,
+    x='frag_total',
+    y='input',
+    z='d_Depth',
+    color='batch'
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+"""
+fig.add_traces(
+    go.Surface(
+        z=mesh2D,
+        colorscale='Viridis',
+        colorbar=dict(title='2Dmesh_value')
+    )
+)
+"""
+fig.update_layout(
+    title='display 3D Surface Plots',
+    xaxis_nticks=36
+)
+
+fig.show()
+# %%
