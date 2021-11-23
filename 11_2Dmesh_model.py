@@ -2,12 +2,15 @@
 import os
 import json
 import arviz
+from matplotlib import colors
+import matplotlib
 import numpy as np
 import pandas as pd
 import cmdstanpy as stan
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from scipy.stats.morestats import yeojohnson_normplot
 
 # %%
 """
@@ -888,9 +891,15 @@ print(mse)
 import matplotlib.pyplot as plt
 
 def show_data2(ax, x0, x1, t):
-    ax.plot(x0, x1, t, 'o',
-            color='cornflowerblue', markeredgecolor='black',
-            markersize=6)
+    ax.plot(
+        x0,
+        x1,
+        t,
+        'o',
+        color='cornflowerblue',
+        markeredgecolor='black',
+        markersize=6
+    )
     ax.view_init(elev=35, azim=-75)
 
 def show_plane(ax, w):
@@ -898,8 +907,16 @@ def show_plane(ax, w):
     px1 = np.linspace(0, 24, 5)
     px0, px1 = np.meshgrid(px0, px1)
     y = w[0]*px0 + w[1] * px1 + w[2]
-    ax.plot_surface(px0, px1, y, rstride=1, cstride=1, alpha=0.3,
-                    color='blue', edgecolor='black')
+    ax.plot_surface(
+        px0,
+        px1,
+        y,
+        rstride=1,
+        stride=1,
+        alpha=0.3,
+        color='blue',
+        edgecolor='black'
+    )
 
 plt.figure(figsize=(6, 5))
 ax = plt.subplot(1,1,1,projection='3d')
@@ -1033,9 +1050,15 @@ print("SD={0:.2f}".format(np.sqrt(mse)))
 import matplotlib.pyplot as plt
 
 def show_data2(ax, x0, x1, t):
-    ax.plot(x0, x1, t, 'o',
-            color='cornflowerblue', markeredgecolor='black',
-            markersize=6)
+    ax.plot(
+        x0,
+        x1,
+        t,
+        'o',
+        color='cornflowerblue',
+        markeredgecolor='black',
+        markersize=6
+    )
     ax.view_init(elev=35, azim=-75)
 
 def show_plane(ax, w):
@@ -1043,8 +1066,16 @@ def show_plane(ax, w):
     px1 = np.linspace(0, max(Y), 5)
     px0, px1 = np.meshgrid(px0, px1)
     y = w[0]*px0 + w[1] * px1 + w[2]
-    ax.plot_surface(px0, px1, y, rstride=1, cstride=1, alpha=0.3,
-                    color='blue', edgecolor='black')
+    ax.plot_surface(
+        px0,
+        px1,
+        y,
+        rstride=1,
+        cstride=1,
+        alpha=0.3,
+        color='blue',
+        edgecolor='black'
+    )
 
 plt.figure(figsize=(6, 5))
 ax = plt.subplot(1,1,1,projection='3d')
@@ -1112,7 +1143,7 @@ fig.add_annotation(
     text=text,
     font=dict(size=8),
     showarrow=False,
-    arrowhead=1,
+    arrowhead=1
 )
 
 text = '*SD = ' + str(round(np.sqrt(mse), 2))
@@ -1131,4 +1162,1118 @@ htmlfile = os.path.join(
 )
 fig.write_html(htmlfile)
 
+# %%
+
+file = '/Users/tomoyauchiyama/code/PC0174_PC0131_LIB_summmary_211110.xlsx'
+lib_df = pd.read_excel(file).dropna(subset=['Depth_80Gb'])
+
+print(lib_df)
+# %%
+
+df4 = lib_df[lib_df['batch']=='PC0174_G'].loc[:, ['batch', 'name', 'input', 'frag_total', 'adapter', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+print(df4)
+
+# %%
+df4['d_Depth'] = lib_df['Depth_80Gb'] - lib_df['Depth_40Gb']
+
+# %%
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    df4,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='batch'
+)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor = 'auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+"""
+px0 = np.linspace(0, max(X), 5)
+px1 = np.linspace(0, max(Y), 5)
+px0, px1 = np.meshgrid(px0, px1)
+z = w[0]*px0 + w[1] * px1 + w[2]
+fig.add_traces(
+    go.Surface(
+        y=px0,
+        x=px1,
+        z=z,
+        colorscale='Viridis',
+        colorbar=dict(title='d_depth')
+    )
+)
+"""
+
+fig.update_layout(
+    title='display 3D Surface Plots',
+    xaxis_nticks=36
+)
+fig.update_layout(showlegend=True)
+
+"""
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+
+# %%
+
+"""
+apapter濃度とフラグメント数の関係（tumorかつqPCRで解析された検体を対象）
+(1) input量が25と100の時の比較を行う (ある程度サンプル数が多いから)
+(2) input量が100の時におけるサンプル間の比較を行う
+この時、傾きは同じなのだろうか？
+"""
+import numpy as np
+
+af = lib_df[lib_df['qubit_qpcr']=='qPCR'].loc[:, ['batch', 'name', 'input', 'frag_total', 'adapter', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+print(af)
+
+# %%
+# ---------------------------------------------
+# (1) input量が25と100の時の比較を行う
+# ---------------------------------------------
+
+# input量が25ngの時 ----------------------------
+
+a25 = af[af['input']==25].loc[:, 'adapter']
+f25 = af[af['input']==25].loc[:, 'frag_total']
+
+plt.scatter(a25, f25)
+plt.xlim(0, 900)
+plt.ylim(0, 25)
+plt.xlabel('adapter')
+plt.ylabel('frag_total')
+
+"""全体的にバラついており、安定していないと考えられる
+"""
+
+# %%
+# ---------------------------------------------
+# (1) input量が25と100の時の比較を行う
+# ----------------------------------------------
+
+# input量が100ngの時 ----------------------------
+a100 = af[af['input']==100].loc[:, 'adapter']
+f100 = af[af['input']==100].loc[:, 'frag_total']
+
+plt.scatter(a100, f100)
+#plt.scatter(np.log10(a100), np.log10(f100))
+plt.xlim(0, 250)
+plt.ylim(0, 200)
+plt.xlabel('adapter')
+plt.ylabel('frag_total')
+
+"""非線形？な概形をしている、2次の曲線が描けそう
+"""
+
+# %%
+# ---------------------------------------------
+# (1) input量が100の時におけるサンプル間の比較を行う
+# ---------------------------------------------
+
+af100 = af[af['input']==100]
+print(af100)
+
+# %%
+# PC0174_Gの時 ----------------------------
+
+a_G = af100[af100['batch']=='PC0174_G'].loc[:, 'adapter']
+f_G = af100[af100['batch']=='PC0174_G'].loc[:, 'frag_total']
+
+# %%
+# PC0174_ABCの時 ----------------------------
+A_100 = af100[af100['batch']=='PC0174_A']
+B_100 = af100[af100['batch']=='PC0174_B']
+C_100 = af100[af100['batch']=='PC0174_C']
+
+a_A = A_100.loc[:, 'adapter']
+f_A = A_100.loc[:, 'frag_total']
+a_B = B_100.loc[:, 'adapter']
+f_B = B_100.loc[:, 'frag_total']
+a_C = C_100.loc[:, 'adapter']
+f_C = C_100.loc[:, 'frag_total']
+
+# %%
+# PC0131の時 ----------------------------
+PC0131 = af100[af100['batch']=='PC0131_adapter']
+a_PC0131 = PC0131.loc[:, 'adapter']
+f_PC0131 = PC0131.loc[:, 'frag_total']
+
+# %%
+
+plt.scatter(a_G, f_G, color='gray', label='PC0174_G')
+plt.scatter(a_A, f_A, color='green', label='PC0174_A')
+plt.scatter(a_B, f_B, color='purple', label='PC0174_B')
+plt.scatter(a_C, f_C, color='orange', label='PC0174_C')
+plt.scatter(a_PC0131, f_PC0131, color='red', label='PC0131_adapter')
+plt.xlim(0, 250)
+plt.ylim(0, 200)
+plt.xlabel('adapter')
+plt.ylabel('frag_total')
+plt.legend(
+    bbox_to_anchor=(1.05, 1),
+    loc='upper left',
+    borderaxespad=0,
+    fontsize=10
+)
+plt.show()
+
+# %%
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    af100,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='batch',
+    range_x=(0, 250),
+    range_y=(0, 250),
+    range_z=(0, 250)
+)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor = 'auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+"""
+px0 = np.linspace(0, max(X), 5)
+px1 = np.linspace(0, max(Y), 5)
+px0, px1 = np.meshgrid(px0, px1)
+z = w[0]*px0 + w[1] * px1 + w[2]
+fig.add_traces(
+    go.Surface(
+        y=px0,
+        x=px1,
+        z=z,
+        colorscale='Viridis',
+        colorbar=dict(title='d_depth')
+    )
+)
+"""
+fig.update_layout(
+    title='display 3D Surface Plots',
+    xaxis_nticks=36
+)
+fig.update_layout(showlegend=True)
+
+"""
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+
+"""adapterの結合ができていないのか？
+　　赤点と青点になぜ差が生じているのか？
+　　非階層クラスタリングで分類できるか
+"""
+
+# %%
+#---------------------------------------------------
+# scikit-learnを用いて線形モデルと非線形特徴量について考える
+#---------------------------------------------------
+
+# sklearn test -------------------------------------
+from sklearn.datasets import make_blobs
+
+# 4種のクラスターを作成
+X, y = make_blobs(centers=4, random_state=8)
+
+# %%
+plt.scatter(
+    X[:,0],
+    X[:,1],
+    c=y,
+    cmap='rainbow',
+    marker='o',
+    edgecolor='gray'
+)
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.show()
+
+# %%
+print(y)
+
+# %%
+import mglearn
+
+# 2種のクラスター結果を可視化
+y = y % 2
+mglearn.discrete_scatter(X[:, 0], X[:, 1], y)
+
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.show()
+
+# %%
+# Xに2番目の特徴量の要素を２乗したものを追加
+X_new = np.hstack([X, X[:, 1:] ** 2])
+
+# X_newにyを追加
+X_new = np.insert(X_new, 3, y, axis=1)
+
+# %%
+fig = px.scatter_3d(
+    X_new,
+    x=X_new[:, 0],
+    y=X_new[:, 1],
+    z=X_new[:, 2],
+    color=X_new[:, 3],
+    range_x=(X_new[:, 0].min()-5, X_new[:, 0].max()+5),
+    range_y=(X_new[:, 1].min()-5, X_new[:, 1].max()+5),
+    range_z=(-20, X_new[:,2].max()+5)
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+fig.update_layout(showlegend=False)
+fig.show()
+
+# %%
+from sklearn.svm import LinearSVC
+
+X_new = np.hstack([X, X[:, 1:] ** 2])
+
+#LinearSVCのサンプリング試行回数はdefaultで1000回
+linear_svm_3d = LinearSVC(max_iter=10000).fit(X_new, y)
+
+# %%
+coef = linear_svm_3d.coef_.ravel()
+intercept = linear_svm_3d.intercept_
+
+print(f'coef: {coef}')
+print(f'intercept: {intercept}')
+print(f'class: {linear_svm_3d.classes_}')
+
+# %%
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+# X_newにyを追加
+X_new = np.insert(X_new, 3, y, axis=1)
+
+fig = px.scatter_3d(
+    X_new,
+    x=X_new[:, 0],
+    y=X_new[:, 1],
+    z=X_new[:, 2],
+    color=X_new[:, 3],
+    range_x=(X_new[:, 0].min()-5, X_new[:, 0].max()+5),
+    range_y=(X_new[:, 1].min()-5, X_new[:, 1].max()+5),
+    range_z=(-20, X_new[:,2].max()+5)
+)
+fig.update_traces(
+    marker=dict(
+        size=2.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+fig.update_layout(
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor = 'auto'
+    )
+)
+fig.update_layout(showlegend=False)
+
+px0 = np.linspace(X_new[:, 0].min()-2, X_new[:, 0].max()+2, 50)
+px1 = np.linspace(X_new[:, 1].min()-2, X_new[:, 1].max()+2, 50)
+px0, px1 = np.meshgrid(px0, px1)
+z = -(px0 * coef[0] + px1 * coef[1] + intercept) / coef[2]
+
+fig.add_traces(
+    go.Surface(
+        x=px0,
+        y=px1,
+        z=z
+        #colorscale='Viridis'
+        #colorbar=dict(title='d_depth')
+    )
+)
+
+fig.update_layout(
+    title='display 3D Surface Plots',
+    xaxis_nticks=36
+)
+fig.update_layout(showlegend=True)
+
+"""
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+# %%
+
+ZZ = px1 ** 2
+
+#dec = linear_svm_3d.decision_function(
+#    np.c_[px0.ravel(), px1.ravel(), ZZ.ravel()]
+#)
+dec = linear_svm_3d.predict(
+    np.c_[px0.ravel(), px1.ravel(), ZZ.ravel()]
+)
+plt.contourf(
+    px0,
+    px1,
+    dec.reshape(px0.shape),
+    labels=[dec.min(), 0, dec.max()],
+    cmap=mglearn.cm2,
+    alpha=0.5
+)
+mglearn.discrete_scatter(X[:, 0], X[:, 1], y)
+
+# %%
+X = af100.loc[:, ['frag_total', 'adapter', 'd_Depth']].to_numpy()
+
+# %%
+# kmeansを実装 -------------------------------------
+from sklearn.cluster import KMeans
+
+y_KMeans = KMeans(n_clusters=3, random_state=0).fit_predict(X)
+
+# %%
+print(y_KMeans)
+print(type(y_KMeans))
+
+af100_kmeans = af100.reset_index(drop=True)
+af100_kmeans['kmeans'] = pd.Series(y_KMeans)
+
+print(af100_kmeans)
+
+# %%
+# 凝集型クラスタリングを実装 -------------------------------------
+from sklearn.cluster import AgglomerativeClustering
+
+y_agg = AgglomerativeClustering(n_clusters=3).fit_predict(X)
+
+# %%
+#LinearSVCのサンプリング試行回数はdefaultで1000回
+linear_svm_3d = LinearSVC(max_iter=10000).fit(X, y_agg)
+
+# %%
+coef = linear_svm_3d.coef_
+intercept = linear_svm_3d.intercept_
+
+print(f'coef: {coef}')
+print(f'intercept: {intercept}')
+print(f'class: {linear_svm_3d.classes_}')
+
+# %%
+print(y_agg)
+print(type(y_agg))
+
+af100_agg = af100.reset_index(drop=True)
+af100_agg['agg'] = pd.Series(y_agg)
+
+print(af100_agg)
+
+# %%
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    af100_agg,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='agg',
+    symbol='agg',
+    range_x=(0, 250),
+    range_y=(0, 250),
+    range_z=(0, 250)
+)
+fig.update_traces(marker_coloraxis=None)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor='auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+"""
+px0 = np.linspace(0, af100_agg['frag_total'].max(), 100)
+px1 = np.linspace(0, af100_agg['adapter'].max(), 100)
+px0, px1 = np.meshgrid(px0, px1)
+z = -(px0 * coef[0] + px1 * coef[1] + intercept) / coef[2]
+
+fig.add_traces(
+    go.Surface(
+        x=px0,
+        y=px1,
+        z=z,
+        colorscale='Viridis',
+        colorbar=dict(title='d_depth')
+    )
+)
+"""
+fig.update_layout(
+    title='display 3D Surface Plots (AgglomerativeClustering)',
+    xaxis_nticks=36
+)
+
+"""
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+
+# %%
+#階層的クラスタリングはscipy
+import scipy.spatial.distance as distance
+from scipy.cluster.hierarchy import dendrogram, ward
+
+#ward法で分類
+linkage_array = ward(X)
+
+ax = plt.figure(figsize=(20,10)).gca()
+dendrogram(linkage_array)
+bounds = ax.get_xbound()
+
+plt.xlabel("sample index",fontsize=10)
+plt.ylabel("Cluster distance",fontsize=10)
+
+# %%
+"""凝集型クラスタリングを用いると説明が付きそう
+　　->　凝集型クラスタリングで分類されたクラスを1-of-K 符号化法で表現して
+　　　　ロジスティック回帰を用いたクラス分類モデルを実装してみる
+"""
+
+# %%
+# クラスタ数が3の時 --------------------------------------------
+y_agg = AgglomerativeClustering(n_clusters=3).fit_predict(X)
+
+# %%
+linear_svm_3d = LinearSVC(max_iter=10000).fit(X, y_agg)
+
+# %%
+coef = linear_svm_3d.coef_
+intercept = linear_svm_3d.intercept_
+
+print(f'coef: {coef}')
+print(f'intercept: {intercept}')
+print(f'class: {linear_svm_3d.classes_}')
+
+# %%
+
+# data visualization ------------------------------------------
+
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    af100_agg,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='agg',
+    symbol='agg',
+    range_x=(0, 250),
+    range_y=(0, 250),
+    range_z=(0, 250)
+)
+fig.update_traces(marker_coloraxis=None)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor='auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+px0 = np.linspace(0, af100_agg['frag_total'].max(), 100)
+px1 = np.linspace(0, af100_agg['adapter'].max(), 100)
+px0, px1 = np.meshgrid(px0, px1)
+
+i = 0
+for w, b in zip(coef, intercept):
+    i += 1
+    z = -(px0 * w[0] + px1 * w[1] + b) / w[2]
+
+    if i == 1:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                colorbar=dict(title='d_depth')
+            )
+        )
+    else:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                showscale=False
+            )
+        )
+
+fig.update_layout(
+    title='display 3D Surface Plots (AgglomerativeClustering)',
+    xaxis_nticks=36
+)
+
+"""
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+
+htmlfile = os.path.join(
+    os.path.abspath('.'),
+    '3D_Linear_SVM.html'
+)
+fig.write_html(htmlfile)
+
+"""
+平面モデルによるカーネル法を用いたSVMでは、
+3平面間の共通部に対する解釈が難しい
+-> クラスター群とは関係ないのない領域の存在が気になる
+"""
+
+# %%
+"""凝集型クラスタを1-of-K 符号化法に変換
+"""
+X = af100.loc[:, ['frag_total', 'adapter', 'd_Depth']].to_numpy()
+X_new = np.insert(X, 3, y_agg, axis=1)
+print(X_new)
+
+# %%
+N = len(X)
+oneOfk = np.zeros((N, 3))
+
+for i in range(len(y_agg)):
+    oneOfk[i, y_agg[i]] = 1
+
+# %%
+print(oneOfk)
+
+# %%
+# ----------------------------------------
+# 関数の定義
+# ----------------------------------------
+# 尤度関数から交差エントロピー誤差を算出
+# 勾配効果法によるパラメータ推定
+
+"""境界線の個数（N(N-1)/2）
+・2クラス分類 -> 1個
+・3クラス分類 -> 3個
+"""
+
+# %%
+"""ロジスティック回帰式の定義
+"""
+def logistic_2class(x0, x1, w):
+    """2クラス分類の2次元のロジスティック回帰モデル
+
+    Args:
+        x0 ([type]): [description]
+        x1 ([type]): [description]
+        w ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    z = w[0] * x0 + w[1] * x1 + w[2]
+    return 1 / (1 + np.exp(-z))
+
+
+def logistic_3class(x0, x1, w):
+    """3クラス以上分類の2次元入力のロジスティック回帰モデル
+
+    Args:
+        x0 ([type]): [description]
+        x1 ([type]): [description]
+        w ([type]): [description]
+        D ([type]): [description]
+        n_class ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+
+    D = 2
+    n_class = 3
+    w = w.reshape((int(D+1), n_class))
+    N = int(len(x1))
+    y = np.zeros((N, n_class))
+    for k in range(n_class):
+        y[:, k] = np.exp(w[k, 0] * x0 + w[k, 1] * x1 + w[k, 2] * 1)
+
+    ak = y.T / np.sum(y, axis=1)
+
+    return ak.T
+
+# %%
+"""交差エントロピー誤差の算出
+"""
+def cee_logistic_2class(x0, x1, w, t):
+    """2クラス分類2次元入力のロジスティック回帰モデルの交差エントロピー誤差
+
+    Args:
+        x0 ([type]): [description]
+        x1 ([type]): [description]
+        w ([type]): [description]
+        t ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    y = logistic_2class(x0, x1, w)
+    n_data = len(y)
+
+    cee = 0
+    for i in range(n_data):
+        cee += t[i, 0] * np.log(y[i]) + (1 - t[i, 0]) * np.log(1 - y[i])
+
+    E = (-1) * (cee / n_data)
+
+    return E
+
+
+def cee_logistic_3class(w, x, t):
+    """3クラス以上分類2次元入力のロジスティック回帰モデルの交差エントロピー誤差
+
+    Args:
+        x0 ([type]): [description]
+        x1 ([type]): [description]
+        w ([type]): [description]
+        t ([type]): [description]
+        n_class ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    y = logistic_3class(x[:, 0], x[:, 1], w)
+    n_data, n_class = y.shape
+
+    cee = 0
+    for i in range(n_data):
+        for j in range(n_class):
+            cee += t[i, j] * np.log(y[i, j])
+
+    E = (-1) * (cee / n_data)
+
+    return E
+
+# %%
+"""交差エントロピー誤差の微分の算出
+パラメータ数(={(n_class)x(n_class-1)/2}x(説明変数+1))分の偏微分の値を得る
+"""
+
+def dcee_logistic_2class(x, w, t):
+    """2クラス分類2次元入力のロジスティック回帰モデルの交差エントロピー誤差の微分
+
+    Args:
+        x0 ([type]): [description]
+        x1 ([type]): [description]
+        w ([type]): [description]
+        t ([type]): [description]
+        n_class ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    D = 2
+    n_class = 3
+    n_parm = (n_class * (n_class - 1) / 2) * (D + 1)
+    y = logistic_2class(x[:, 0], x[:, 1], w)
+    n_data = len(y)
+
+    dE = np.zeros(n_parm)
+    for i in range(n_data):
+        item = y[i] - t[i, 0]
+        dE[0] += item * x[i, 0]
+        dE[1] += item * x[i, 1]
+        dE[2] += item * 1
+    dE = dE / n_data
+
+    return dE
+
+def dcee_logistic_3class(w, x, t):
+    D = 2
+    n_class = 3
+    y = logistic_3class(x[:, 0], x[:, 1], w)
+    n_data, n_class = y.shape
+
+    dE = np.zeros((n_class, int(D+1)))  # ( クラスの数 K) x (x の次元 D+1)
+    for i in range(n_data):
+        for j in range(n_class):
+            dE[j, :] += (y[i, j] - t[i, j]) * np.r_[x[i, :], 1]
+    dE = dE / n_data
+
+    return dE.reshape(-1)
+
+# %%
+"""共役勾配法によるパラメータ推定
+パラメータ引数の指定に注意する
+-> cee_logistic_3classの引数の種類と関数で引数を与える時の位置など
+"""
+from scipy.optimize import minimize
+
+def fit_logistic_2class(w_init, x, t):
+    res = minimize(
+        cee_logistic_2class,
+        w_init,
+        args=(x, t),
+        jac=dcee_logistic_2class,
+        method='CG'
+    )
+
+    return res.x
+
+def fit_logistic_3class(w_init, x, t):
+    res = minimize(
+        cee_logistic_3class,
+        w_init,
+        args=(x, t),
+        jac=dcee_logistic_3class,
+        method='CG'
+    )
+
+    return res.x
+
+
+# %%
+# testデータ生成 --------------------------------
+np.random.seed(seed=1)  # 乱数を固定
+N = 100  # データの数
+K = 3  # 分布の数
+T3 = np.zeros((N, 3), dtype=np.uint8)
+T2 = np.zeros((N, 2), dtype=np.uint8)
+X = np.zeros((N, 2))
+X_range0 = [-3, 3]  # X0 の範囲 , 表示用
+X_range1 = [-3, 3]  # X1 の範囲 , 表示用
+Mu = np.array([[-.5, -.5], [.5, 1.0], [1, -.5]])  # 分布の中心
+Sig = np.array([[.7, .7], [.8, .3], [.3, .8]])  # 分布の分散
+Pi = np.array([0.4, 0.8, 1])  # (A) 各分布への割合 0.4 0.8 1
+for n in range(N):
+    wk = np.random.rand()
+    for k in range(K): # (B)
+        if wk < Pi[k]:
+            T3[n, k] = 1
+            break
+    for k in range(2):
+        X[n, k] = (np.random.randn() * Sig[T3[n, :] == 1, k]
+                   + Mu[T3[n, :] == 1, k])
+T2[:, 0] = T3[:, 0]
+T2[:, 1] = T3[:, 1] | T3[:, 2]
+
+# %%
+print(X)
+print(T3)
+
+# %%
+# test------
+W = np.array([1, 2, 3, 4 ,5, 6, 7, 8, 9])
+y = logistic_3class(X[:, 0], X[:, 1], W, 3)
+print(np.round(y, 3))
+
+# %%
+# test------
+W = np.array([1, 2, 3, 4 ,5, 6, 7, 8, 9])
+cee = cee_logistic_3class(X[:, 0], X[:, 1], W, T3, 3)
+print(cee)
+
+# %%
+# test------
+W = np.array([1, 2, 3, 4 ,5, 6, 7, 8, 9])
+dcee = dcee_logistic_3class(X[:, 0], X[:, 1], W, T3, 3)
+print(dcee)
+
+
+# %%
+# 実行 --------------------------------
+x = np.vstack((X[:, 0], X[:, 1])).T
+t = oneOfk
+w_init = np.zeros((3, 3))
+
+w = fit_logistic_3class(w_init, x, t)
+cee = cee_logistic_3class(w, x, t)
+
+print(np.round(w.reshape((3, 3)), 2))
+print('CEE = {0:.2f}'.format(cee))
+
+# %%
+# データ処理 ---------------------------
+px0 = np.linspace(0, af100_agg['frag_total'].max(), 100)
+px1 = np.linspace(0, af100_agg['adapter'].max(), 100)
+px0, px1 = np.meshgrid(px0, px1)
+
+# %%
+N = int(len(px0))
+a = np.zeros((N, N))
+y = []
+for k in range(3):
+    a = np.exp(w[k, 0] * px0 + w[k, 1] * px1 + w[k, 2] * 1)
+    y.append(a)
+
+# %%
+print(np.array(y).shape)
+#-> (3, 100, 100)
+# %%
+yk = np.array(y)
+u = np.sum(yk, axis=0)
+
+
+# %%
+# data visualization ------------------------------------------
+
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    af100_agg,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='agg',
+    symbol='agg',
+    range_x=(0, 250),
+    range_y=(0, 250),
+    range_z=(0, 250)
+)
+fig.update_traces(marker_coloraxis=None)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor='auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+px0 = np.linspace(0, af100_agg['frag_total'].max(), 100)
+px1 = np.linspace(0, af100_agg['adapter'].max(), 100)
+px0, px1 = np.meshgrid(px0, px1)
+
+
+for i in range(3):
+    z = (yk[i] / u) * af100_agg['d_Depth'].max()
+
+    if i == 0:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                colorbar=dict(title='d_depth')
+            )
+        )
+    else:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                showscale=False
+            )
+        )
+
+fig.update_layout(
+    title='display 3D Surface Plots (AgglomerativeClustering)',
+    xaxis_nticks=36
+)
+
+"""
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+
+htmlfile = os.path.join(
+    os.path.abspath('.'),
+    '3D_logistic_SVM.html'
+)
+fig.write_html(htmlfile)
 # %%
