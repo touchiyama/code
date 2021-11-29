@@ -7,6 +7,8 @@ import matplotlib
 import numpy as np
 import pandas as pd
 import cmdstanpy as stan
+from pandas.core.reshape.concat import concat
+from pandas.core.series import Series
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -1894,9 +1896,11 @@ fig.write_html(htmlfile)
 # %%
 """凝集型クラスタを1-of-K 符号化法に変換
 """
+from sklearn.preprocessing import StandardScaler
 X = af100.loc[:, ['frag_total', 'adapter', 'd_Depth']].to_numpy()
-X_new = np.insert(X, 3, y_agg, axis=1)
-print(X_new)
+
+#X_new = np.insert(X, 3, y_agg, axis=1)
+#print(X_new)
 
 # %%
 N = len(X)
@@ -1906,7 +1910,155 @@ for i in range(len(y_agg)):
     oneOfk[i, y_agg[i]] = 1
 
 # %%
-print(oneOfk)
+X = af100.loc[:, ['frag_total', 'adapter', 'd_Depth']].reset_index(drop=True)
+X['y_agg'] = pd.Series(y_agg)
+
+# %%
+"""平均0、分散1に標準化（z-score）
+"""
+scaled = StandardScaler()
+scaled.fit(X.loc[:, ['frag_total', 'adapter', 'd_Depth']])
+scaled_X = scaled.transform(X.loc[:, ['frag_total', 'adapter', 'd_Depth']])
+
+X = pd.DataFrame(np.insert(scaled_X, 3, y_agg, axis=1))
+X.columns = ['frag_total', 'adapter', 'd_Depth', 'y_agg']
+
+# %%
+#階層的クラスタリングはscipy
+import scipy.spatial.distance as distance
+from scipy.cluster.hierarchy import dendrogram, ward
+
+#ward法で分類
+linkage_array = ward(scaled_X)
+
+ax = plt.figure(figsize=(20,10)).gca()
+dendrogram(linkage_array)
+bounds = ax.get_xbound()
+
+plt.xlabel("sample index",fontsize=10)
+plt.ylabel("Cluster distance",fontsize=10)
+
+# %%
+# クラス1と2のサンプルを抽出 ---------------------------------------
+X_new = X[(X['y_agg']==1) | (X['y_agg']==2)].to_numpy()
+print(X_new)
+
+# %%
+X_0_mean = X[X['y_agg']==0].to_numpy().mean()
+X_0_median = np.median(X[X['y_agg']==0].to_numpy())
+
+print(X_0_mean)
+print(X_0_median)
+
+# %%
+N = len(X_new)
+oneOfk = np.zeros((N, 2))
+
+for i in range(N):
+    oneOfk[i, y_agg[i]-1] = 1
+
+# %%
+# ----------------------------------------
+# 標準化したサンプル群のクラス分類を線形svmで行う
+# ----------------------------------------
+
+linear_svm_3d = LinearSVC(max_iter=10000).fit(scaled_X, y_agg)
+
+# %%
+coef = linear_svm_3d.coef_
+intercept = linear_svm_3d.intercept_
+
+
+print(f'coef: {coef}')
+print(f'intercept: {intercept}')
+print(f'class: {linear_svm_3d.classes_}')
+
+# %%
+# 3クラス分類 data visiualization -----------------------------
+
+mesh_size = 1.5
+
+fig = px.scatter_3d(
+    X,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='y_agg',
+    symbol='y_agg',
+    range_x=(X['frag_total'].min() - 1, X['frag_total'].max() + 1),
+    range_y=(X['adapter'].min() - 1, X['adapter'].max() + 1),
+    range_z=(X['d_Depth'].min() - 1, X['d_Depth'].max() + 1)
+)
+fig.update_traces(marker_coloraxis=None)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor='auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+px0 = np.linspace(
+    scaled_X[:, 0].min() - 1,
+    scaled_X[:, 0].max() + 1,
+    100
+)
+px1 = np.linspace(
+    scaled_X[:, 1].min() - 1,
+    scaled_X[:, 1].max() + 1,
+    100
+)
+px0, px1 = np.meshgrid(px0, px1)
+
+i = 0
+for w, b in zip(coef, intercept):
+    i += 1
+    z = -(px0 * w[0] + px1 * w[1] + b) / w[2]
+
+    if i == 1:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                colorbar=dict(title='d_depth')
+            )
+        )
+    else:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                showscale=False
+            )
+        )
+
+fig.update_layout(
+    title='display 3D Surface Plots (Ward method and Z-score)',
+    xaxis_nticks=36
+)
+
+fig.show()
+
+htmlfile = os.path.join(
+    os.path.abspath('.'),
+    '3D_scaled_Linear_SVM.html'
+    #'3D_scaled_ward.html'
+)
+fig.write_html(htmlfile)
 
 # %%
 # ----------------------------------------
@@ -1967,7 +2119,7 @@ def logistic_3class(x0, x1, w):
 # %%
 """交差エントロピー誤差の算出
 """
-def cee_logistic_2class(x0, x1, w, t):
+def cee_logistic_2class(w, x, t):
     """2クラス分類2次元入力のロジスティック回帰モデルの交差エントロピー誤差
 
     Args:
@@ -1979,7 +2131,7 @@ def cee_logistic_2class(x0, x1, w, t):
     Returns:
         [type]: [description]
     """
-    y = logistic_2class(x0, x1, w)
+    y = logistic_2class(x[:, 0], x[:, 1], w)
     n_data = len(y)
 
     cee = 0
@@ -2021,7 +2173,7 @@ def cee_logistic_3class(w, x, t):
 パラメータ数(={(n_class)x(n_class-1)/2}x(説明変数+1))分の偏微分の値を得る
 """
 
-def dcee_logistic_2class(x, w, t):
+def dcee_logistic_2class(w, x, t):
     """2クラス分類2次元入力のロジスティック回帰モデルの交差エントロピー誤差の微分
 
     Args:
@@ -2035,8 +2187,8 @@ def dcee_logistic_2class(x, w, t):
         [type]: [description]
     """
     D = 2
-    n_class = 3
-    n_parm = (n_class * (n_class - 1) / 2) * (D + 1)
+    n_class = 2
+    n_parm = int((n_class * (n_class - 1) / 2) * (D + 1))
     y = logistic_2class(x[:, 0], x[:, 1], w)
     n_data = len(y)
 
@@ -2131,6 +2283,12 @@ print(np.round(y, 3))
 
 # %%
 # test------
+W = np.array([-1, -1, -1])
+y = logistic_2class(X_new[:, 0], X_new[:, 1], W)
+print(np.round(y, 3))
+
+# %%
+# test------
 W = np.array([1, 2, 3, 4 ,5, 6, 7, 8, 9])
 cee = cee_logistic_3class(X[:, 0], X[:, 1], W, T3, 3)
 print(cee)
@@ -2141,9 +2299,23 @@ W = np.array([1, 2, 3, 4 ,5, 6, 7, 8, 9])
 dcee = dcee_logistic_3class(X[:, 0], X[:, 1], W, T3, 3)
 print(dcee)
 
+# %%
+print(X_new)
 
 # %%
-# 実行 --------------------------------
+# 2クラス実行 --------------------------------
+x = np.vstack((X_new[:, 0], X_new[:, 1])).T
+t = oneOfk
+w_init = np.zeros(3)
+
+w = fit_logistic_2class(w_init, x, t)
+cee = cee_logistic_2class(w, x, t)
+
+print(np.round(w.reshape((1, 3)), 2))
+print('CEE = {0:.2f}'.format(cee))
+
+# %%
+# 3クラス実行 --------------------------------
 x = np.vstack((X[:, 0], X[:, 1])).T
 t = oneOfk
 w_init = np.zeros((3, 3))
@@ -2155,7 +2327,195 @@ print(np.round(w.reshape((3, 3)), 2))
 print('CEE = {0:.2f}'.format(cee))
 
 # %%
-# データ処理 ---------------------------
+# 2クラス分類データ処理 ---------------------------
+px0 = np.linspace(X_new[:, 0].min(), X_new[:, 0].max(), 100)
+px1 = np.linspace(X_new[:, 0].min(), X_new[:, 1].max(), 100)
+px0, px1 = np.meshgrid(px0, px1)
+
+# %%
+mesh_size = 1.5
+
+fig = px.scatter_3d(
+    X,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='y_agg',
+    symbol='y_agg',
+    #range_x=(X_new[:, 0].min() - 1, X_new[:, 0].max() + 1),
+    #range_y=(X_new[:, 1].min() - 1, X_new[:, 1].max() + 1),
+    #range_z=(X_new[:, 2].min() - 1, X_new[:, 2].max() + 1)
+)
+fig.update_traces(marker_coloraxis=None)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor='auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+mean_px0 = np.linspace(X_new[:, 0].min(), X_new[:, 0].max(), 100)
+mean_px1 = np.linspace(X_new[:, 1].min(), X_new[:, 1].max(), 100)
+mean_px2 = X_0_median * np.ones((100, 100))
+
+for i in range(3):
+    z = yk[i] / u
+
+    if i == 0:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                colorbar=dict(title='d_depth')
+            )
+        )
+    else:
+        fig.add_traces(
+            go.Surface(
+                x=px0,
+                y=px1,
+                z=z,
+                colorscale='Viridis',
+                showscale=False
+            )
+        )
+
+fig.update_layout(
+    title='display 3D Surface Plots (AgglomerativeClustering and Z-score)',
+    xaxis_nticks=36
+)
+
+fig.show()
+
+# %%
+# data visualization ------------------------------------------
+
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    X,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='y_agg',
+    symbol='y_agg',
+    range_x=(X['frag_total'].min() - 1, X['frag_total'].max() + 1),
+    range_y=(X['adapter'].min() - 1, X['adapter'].max() + 1),
+    range_z=(X['d_Depth'].min() - 1, X['d_Depth'].max() + 1)
+)
+fig.update_traces(marker_coloraxis=None)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor='auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+
+px0 = np.linspace(
+    X['frag_total'].min() - 1,
+    X['frag_total'].max() + 1,
+    100
+)
+px1 = np.linspace(
+    X['adapter'].min() - 1,
+    X['adapter'].max() + 1,
+    100
+)
+px0, px1 = np.meshgrid(px0, px1)
+
+z = w[0] * px0 + w[1] * px1 + w[2]
+px2 = (1 / (1 + np.exp(-z))) * X['d_Depth'].max()
+
+fig.add_traces(
+    go.Surface(
+        x=px0,
+        y=px1,
+        z=px2,
+        colorscale='Viridis',
+        colorbar=dict(title='d_depth')
+    )
+)
+
+#mean_px0 = np.linspace(0, 250, 100)
+#mean_px1 = np.linspace(0, 250, 100)
+mean_px2 = X_0_median * np.ones((100, 100))
+
+fig.add_traces(
+    go.Surface(
+        x=px0,
+        y=px1,
+        z=mean_px2,
+        colorscale='Viridis',
+        #colorbar=dict(title='d_depth')
+    )
+)
+
+fig.update_layout(
+    title='display 3D Surface Plots (AgglomerativeClustering)',
+    xaxis_nticks=36
+)
+
+"""
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+
+#htmlfile = os.path.join(
+#    os.path.abspath('.'),
+#    '3D_logistic_SVM_v02.html'
+#)
+#fig.write_html(htmlfile)
+
+# %%
+print(px2.shape)
+
+# %%
+# 3クラス分類データ処理 ---------------------------
 px0 = np.linspace(0, af100_agg['frag_total'].max(), 100)
 px1 = np.linspace(0, af100_agg['adapter'].max(), 100)
 px0, px1 = np.meshgrid(px0, px1)
@@ -2276,4 +2636,3 @@ htmlfile = os.path.join(
     '3D_logistic_SVM.html'
 )
 fig.write_html(htmlfile)
-# %%

@@ -1937,6 +1937,241 @@ parm_Y = fit.stan_variable('new_Y')
 print(parm_Y.shape)
 
 # %%
+probs = (10, 25, 50, 75, 90)
+column = [f'p{p}' for p in probs]
+
+d_est = pd.DataFrame(
+    np.percentile(parm_Y, probs, axis=0).transpose(),
+    columns=column
+)
+d_est['x'] = d_est.index + 1
+
+print(d_est)
+
+# %%
+fig = make_subplots()
+
+pre_y = d_est[column[2]]
+pre_x = d_est['x']
+
+for k in range(2):
+    fig.add_trace(
+        go.Scatter(
+            x=d_est['x'],
+            y=d_est[column[k]],
+            fill=None,
+            mode='lines',
+            line=dict(color='black', width=0.4),
+            opacity=0.2*(k+1)
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=d_est['x'],
+            y=d_est[column[-k-1]],
+            fill='tonexty',
+            mode='lines',
+            line=dict(color='black', width=0.4),
+            opacity=0.2*(k+1)
+        )
+    )
+
+fig.add_trace(
+    go.Scatter(
+        x=pre_x,
+        y=pre_y,
+        mode='lines',
+        line=dict(color=None, width=2.5)
+    )
+)
+fig.add_trace(
+    go.Scatter(
+        x=x,
+        y=y,
+        mode='markers',
+        marker=dict(
+            color='cornflowerblue',
+            size=5,
+            line=dict(color='black', width=1)
+        )
+    )
+)
+fig.add_trace(
+    go.Scatter(
+        x=x,
+        y=y,
+        mode='lines',
+        line=dict(
+            color='green',
+            width=1.5,
+            dash='dashdot'
+        ),
+    )
+)
+fig.update_layout(
+    plot_bgcolor='white'
+    #height=800,
+    #width=900
+)
+fig.update_xaxes(
+    title='X',
+    showline=True,
+    linewidth=1,
+    linecolor='black',
+    mirror=True,
+    ticks='inside',
+    range=(x_min, x_max),
+    dtick=5
+)
+fig.update_yaxes(
+    title='Y',
+    showline=True,
+    linewidth=1,
+    linecolor='black',
+    mirror=True,
+    ticks='inside',
+    range=(y_min, y_max),
+    dtick=0.5
+)
+fig.update_layout(showlegend=False)
+
+# %%
+#--------------------------------------------
+# 平滑化トレンドモデル
+#--------------------------------------------
+
+# stan file ---------------------------------
+code = """data {
+    int N;
+    vector[N] Y;
+    int new_X;
+}
+parameters {
+    vector[N] a;
+    real<lower=0> s_a;
+    real <lower=0> s_Y;
+}
+model {
+    a[3:N] ~ normal(2*a[2:(N-1)]-a[1:(N-2)], s_a);
+    Y ~ normal(a, s_Y);
+}
+generated quantities {
+    real new_Y[N+new_X];
+    real new_a[N+new_X];
+    for (i in 1:N){
+        new_Y[i] = normal_rng(a[i], s_Y);
+        new_a[i] = a[i];
+    }
+    for (i in N+1:N+new_X){
+        new_a[i] = normal_rng(2*new_a[i-1]-new_a[i-2], s_a);
+        new_Y[i] = normal_rng(new_a[i], s_Y);
+    }
+}
+"""
+
+stan_name = 'smoothing_model' # have to change
+
+stan_file = os.path.join(
+    os.path.abspath('.'),
+    'STAN',
+    stan_name + '.stan'
+)
+
+with open(stan_file, 'w') as wf:
+    wf.writelines(code)
+
+print(stan_file)
+
+# %%
+#--------------------------------------
+# make json file
+#--------------------------------------
+import json
+
+N = df.index.size
+Y = y.to_list()
+new_X = 9
+
+observed_data = dict(
+    N=N,
+    Y=Y,
+    new_X=new_X
+)
+
+json_name = 'tp_data' # have to change
+
+json_file = os.path.join(
+    os.path.abspath('.'),
+    'STAN',
+    json_name + '.json'
+)
+
+with open(json_file, 'w') as wf:
+    json.dump(observed_data, wf, indent=2)
+
+print(json_file)
+
+# %%
+#--------------------------------------
+# compile stan file
+#--------------------------------------
+import cmdstanpy as stan
+
+sm = stan.CmdStanModel(stan_file=stan_file)
+
+# %%
+print(sm.name)
+print(sm.stan_file)
+print(sm.exe_file)
+print(sm.code())
+
+# %%
+#--------------------------------------
+# MCMC sampling (NUTS method)
+#--------------------------------------
+
+fit = sm.sample(
+    data=json_file,
+    chains=3,
+    iter_sampling=2500,
+    iter_warmup=500,
+    thin=5,
+    seed=1234
+)
+
+# %%
+#--------------------------------------
+# MCMC sampling summary
+#--------------------------------------
+
+# summaries of
+# the total joint log-probability density lp__
+# plus all model parameters
+# and quantities of interest in a pandas.DataFrame
+
+# type -> pandas (basic statistic)
+pd.set_option('display.max_columns', None)
+print(fit.summary().loc[:, ['Mean', 'StdDev', '5%', '50%', '95%', 'N_Eff', 'R_hat']])
+
+# %%
+#--------------------------------------
+# parameter visualization
+#--------------------------------------
+import arviz
+
+arviz.plot_trace(fit)
+
+# %%
+#--------------------------------------
+# parameter data extraction
+#--------------------------------------
+
+#====== extract parmetar 'new_Y' ======#
+parm_Y = fit.stan_variable('new_Y')
+
+#====== realize array shape  ======#
+print(parm_Y.shape)
+
 # %%
 probs = (10, 25, 50, 75, 90)
 column = [f'p{p}' for p in probs]
@@ -2035,4 +2270,5 @@ fig.update_yaxes(
     dtick=0.5
 )
 fig.update_layout(showlegend=False)
+
 # %%
