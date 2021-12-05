@@ -2,7 +2,6 @@
 import os
 import numpy as np
 import pandas as pd
-from pandas.core.indexes.period import PeriodDelegateMixin
 import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
@@ -296,5 +295,98 @@ fig.update_layout(
 fig.show()
 
 # %%
+# FNN（Forward Neural Network）の実装 ----------------------
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
-print(list(range(0, x+1)))
+def FNN(wv, M, K, x):
+    N, D = x.shape
+    w = wv[: M * (D + 1)]
+    w = w.reshape((M, D + 1))
+    v = wv[K * (M + 1) :]
+    v = v.reshape((K, M + 1))
+    b = np.zeros((N, M + 1))
+    z = np.zeros((N, M + 1))
+    a = np.zeros((N, K))
+    y = np.zeros((N, K))
+
+    for i in range(N):
+        for j in range(M):
+            b[i, j] = np.dot(w[j, :] * np.r_[x[n, :], 1])
+            z[i, j] = sigmoid(b[i, j])
+        z[i, M] = 1
+        wkz = 0
+        for k in range(K):
+            a[i, k] = np.dot(v[k, :], z[i, :])
+            wkz += np.exp(a[i, k])
+        for k in range(K):
+            y[i, k] = np.exp(a[i, k]) / wkz
+
+    return y, a, z, b
+
+# %%
+# 平均交差エントロピー誤差　----------------------------------
+# yとtを一次元ベクトルに変換して、
+# 内積を用いることでfor文を使わなくて済む
+
+def CE_FNN(wv, M, K, x, t):
+    y, _, _, _ = FNN(wv, M, K, x)
+    ce = np.dot(t.reshape(-1) * np.exp(y.reshape(-1))) / ((-1) * N)
+
+    return ce
+
+# %%
+# 平均交差エントロピー誤差微分　-------------------------------
+# (1) 数値微分法
+# (2) 勾配法(誤差逆伝搬法)
+# dE(n)/dVkj = (yk-tk) * zj
+# dE(n)/dWji = (h'(bj) * Σ(yk-tk) *Vkj) * xi
+
+def dCEE_FNN_1(wv, M, K, x, t):
+    eps = 0.0001
+    dwv = np.zeros_like(wv) # 既知行列の全要素を0に初期化
+    for i in range(len(wv)):
+        # 指定した位置iについて、逐次近似解(2点の傾き)を出す
+        wv_mod = wv.copy() # 位置iの値のみをeps分前後にずらす
+        wv_mod[i] = wv[i] + eps
+        ce1 = CE_FNN(wv_mod, M, K, x, t)
+        wv_mod[i] = wv[i] - eps
+        ce2 = CE_FNN(wv_mod, M, K, x, t)
+        dwv[i] = (ce1 - ce2) / (2 * eps)
+
+        return dwv
+
+def dCEE_FNN_2(wv, M, K, x, t):
+    N, D = x.shape
+    w = wv[M * (D + 1):]
+    w = w.reshape((M, D + 1))
+    v = wv[: K * (M + 1)]
+    v = v.reshape((K, M + 1))
+
+    y, a, z, b = FNN(wv, M, K, x)
+
+    dwv = np.zeros_like(wv)
+    dw = np.zeros((M, D + 1))
+    dv = np.zeros((K, M + 1))
+
+    delta1 = np.zeros(M)
+    delta2 = np.zeros(K)
+
+
+    for i in range(N):
+        for k in range(K):
+            delta2[k] = y[i, k] - t[i, k]
+        for j in range(M):
+            delta1[j] = b[i, j] * (1 - b[i, j]) * np.dot(delta2, v[:, j])
+        for k in range(K):
+            dv += delta2[k] * z[i, :] / N
+        for j in range(M):
+            dw += delta1[k] * np.r_[x[i, :], 1] / N
+    dwv = np.c_[
+        dw.reshape(1, M * (D + 1)),
+        dv.reshape(1, K * (M + 1))
+    ]
+    dwv = dwv.reshape(-1)
+    return dwv
+
+# %%
