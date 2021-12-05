@@ -1784,8 +1784,8 @@ print(f'coef: {coef}')
 print(f'intercept: {intercept}')
 print(f'class: {linear_svm_3d.classes_}')
 
-# %%
 
+# %%
 # data visualization ------------------------------------------
 
 mesh_size = 1.5
@@ -1972,6 +1972,17 @@ intercept = linear_svm_3d.intercept_
 print(f'coef: {coef}')
 print(f'intercept: {intercept}')
 print(f'class: {linear_svm_3d.classes_}')
+
+# %%
+# %%
+dec = linear_svm_3d._predict_proba_lr(scaled_X)
+print(dec)
+
+d = linear_svm_3d.predict(scaled_X)
+print(d)
+
+# %%
+print(scaled_X)
 
 # %%
 # 3クラス分類 data visiualization -----------------------------
