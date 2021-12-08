@@ -8,10 +8,11 @@ with open(file, 'r') as ctg:
     for line in ctg.readlines():
         line = line.rstrip('\n')
         tmp = line.split()
-        if (tmp[0] == 'CONTIG') & (tmp[-1] == 'correct'):
+        if (tmp[0] == 'CONTIG') & (tmp[-1] == 'correct'): #correct_unalign
             ctgID[tmp[1]] = '-'
 
-outf = './SD0566_correct_contigs_2.txt'
+outf = '/Users/tomoyauchiyama/code/SD0566/SD0566_correct_contigs_2.txt'
+cnt = {}
 with open(outf, 'w') as wf:
     with open(file, 'r') as ctg:
         for line in ctg.readlines():
@@ -19,12 +20,26 @@ with open(outf, 'w') as wf:
             tmp = line.split()
             if str.isdigit(tmp[0]):
                 if ctgID.get(tmp[5]):
-                    wf.write(f'{line}')
+                    if cnt.get(tmp[5]):
+                        cnt[tmp[5]] += 1
+                    else:
+                        cnt[tmp[5]] = 1
+
+                    ctg_name = tmp[5] + '_' + str(cnt[tmp[5]])
+                    column = tmp[4] + '\t' + tmp[0] + '\t' + tmp[1] + '\t' + ctg_name + '\t' + tmp[2] + '\t' + tmp[3] + '\t' + tmp[6] + '\t' + tmp[7]
+                    wf.write(f'{column}')
                     length = int(tmp[1]) - int(tmp[0]) + 1
                     wf.write(f'\t{length}\n')
 
-sort -n -k 1,1 SD0566_correct_contigs_2.txt > SD0566_correct_contigs_2_sorted.txt
-SD0566_correct_contigs_2_sorted.txtの内容を処理して、１つのsccafoldを作る。
+sort -n -k 1,1 SD0566_correct_contigs_1.txt > SD0566_correct_contigs_1_sorted.txt
+bedtools merge -i SD0566_correct_contigs_1_sorted.txt -c 4 -o collapse > SD0566_correct_contigs_1_merged.txt
+
+sort -n -k 2,2 SD0566_correct_contigs_2.txt > SD0566_correct_contigs_2_sorted.txt
+bedtools merge -i SD0566_correct_contigs_2_sorted.txt -c 4 -o collapse > SD0566_correct_contigs_2_merged.txt
+
+cat SD0566_correct_contigs_*_merged.txt | sort -n -k 2,2 > SD0566_full_correct_contigs.txt
+
+SD0566_correct_contigs_2_sorted.txtの内容を処理して、１つのscafoldを作る。
 具体的に以下の処理を行う。
 (1) 間隙領域には、Nの文字を入れる
 (2) alignment領域に、それに対応するcontig配列から切り出してきた塩基を挿入
