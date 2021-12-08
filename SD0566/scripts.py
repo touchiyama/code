@@ -39,6 +39,8 @@ bedtools merge -i SD0566_correct_contigs_2_sorted.txt -c 4 -o collapse > SD0566_
 
 cat SD0566_correct_contigs_*_merged.txt | sort -n -k 2,2 > SD0566_full_correct_contigs.txt
 
+contigs_1_merge.txtの領域を基準にして、contig_2_merge.txtから領域を抽出することで間を埋めていくイメージ
+
 SD0566_correct_contigs_2_sorted.txtの内容を処理して、１つのscafoldを作る。
 具体的に以下の処理を行う。
 (1) 間隙領域には、Nの文字を入れる
