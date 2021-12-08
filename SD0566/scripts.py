@@ -24,3 +24,9 @@ with open(outf, 'w') as wf:
                     wf.write(f'\t{length}\n')
 
 sort -n -k 1,1 SD0566_correct_contigs_2.txt > SD0566_correct_contigs_2_sorted.txt
+SD0566_correct_contigs_2_sorted.txtの内容を処理して、１つのsccafoldを作る。
+具体的に以下の処理を行う。
+(1) 間隙領域には、Nの文字を入れる
+(2) alignment領域に、それに対応するcontig配列から切り出してきた塩基を挿入
+(3) (2) でend > startの表示になっている時、逆相補鎖に変換
+(4) 完璧に近づけようと思うならば、間隙領域の補間を行う。
