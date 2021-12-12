@@ -31,17 +31,18 @@ with open(outf, 'w') as wf:
                     length = int(tmp[1]) - int(tmp[0]) + 1
                     wf.write(f'\t{length}\n')
 
-sort -n -k 1,1 SD0566_correct_contigs_1.txt > SD0566_correct_contigs_1_sorted.txt
-bedtools merge -i SD0566_correct_contigs_1_sorted.txt -c 4 -o collapse > SD0566_correct_contigs_1_merged.txt
 
+sort -n -k 2,2 SD0566_correct_contigs_1.txt > SD0566_correct_contigs_1_sorted.txt
 sort -n -k 2,2 SD0566_correct_contigs_2.txt > SD0566_correct_contigs_2_sorted.txt
-bedtools merge -i SD0566_correct_contigs_2_sorted.txt -c 4 -o collapse > SD0566_correct_contigs_2_merged.txt
 
-cat SD0566_correct_contigs_*_merged.txt | sort -n -k 2,2 > SD0566_full_correct_contigs.txt
+bedtools merge -i SD0566_correct_contigs_1_sorted.txt -c 4 -o collapse > SD0566_correct_contigs_1_merged.txt
+bedtools merge -i SD0566_correct_contigs_2_mod.txt -S + -c 4 -o collapse > SD0566_correct_contigs_2_merged.txt # '+'の方が処理がしやすい、処理の実行時間も早い
+
+cat SD0566_correct_contigs_1_sorted.txt SD0566_correct_contigs_2_mod.txt > SD0566_correct_contigs_12_sorted.txt
 
 contigs_1_merge.txtの領域を基準にして、contig_2_merge.txtから領域を抽出することで間を埋めていくイメージ
 
-SD0566_correct_contigs_2_sorted.txtの内容を処理して、１つのscafoldを作る。
+SD0566_full_corrent_contigs.txtの内容を処理して、１つのscafoldを作る。3842354/4500000 = 0.854 カバー
 具体的に以下の処理を行う。
 (1) 間隙領域には、Nの文字を入れる
 (2) alignment領域に、それに対応するcontig配列から切り出してきた塩基を挿入
