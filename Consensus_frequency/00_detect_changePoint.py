@@ -330,3 +330,187 @@ correlationの計算に関しては、
 各グループで、Freq scoreとSimilarity Scoreの分布を見て判断する
 
 """
+
+
+# %%
+# fastq feature -----------------------------------
+import re
+import gzip
+
+file = '/Users/tomoyauchiyama/Downloads/K4BR8_PG4536_01B2003_H1_L001_R1.fastq.gz'
+outf = './fw.fa'
+
+flag = 0
+with open(outf, 'w') as wf:
+    with gzip.open(file, 'rt') as fq:
+        for line in fq.readlines():
+            line = line.rstrip('\n')
+            if re.compile(r'^@').search(line):
+                flag = 1
+            else:
+                if flag == 1:
+                    forward = line[:46]
+                    wf.write(f'{forward}\n')
+                    flag = 0
+
+# %%
+file = './fw.fa'
+forward = 'GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCCAGAGAGGC'
+outf = './mis_fw.fa'
+
+cnt = 0
+with open(outf, 'w') as wf:
+    with open(file, 'r') as rf:
+        for line in rf.readlines():
+            line = line.rstrip('\n')
+            if line != forward:
+                cnt += 1
+                id = '>seq_' + str(cnt)
+                wf.write(f'{id}\n')
+                wf.write(f'{line}\n')
+# %%
+file = '/Users/tomoyauchiyama/Downloads/K4BR8_PG4536_01B2003_H1_L001_R1.fastq.gz'
+outf = './01_R1_fastq_feat/rv.fa'
+
+flag = 0
+with open(outf, 'w') as wf:
+    with gzip.open(file, 'rt') as fq:
+        for line in fq.readlines():
+            line = line.rstrip('\n')
+            if re.compile(r'^@').search(line):
+                flag = 1
+            else:
+                if flag == 1:
+                    reverse = line[68:114]
+                    wf.write(f'{reverse}\n')
+                    flag = 0
+
+# %%
+file = './01_R1_fastq_feat/rv.fa'
+reverse = 'CCCAGGCGGCCACCGCAGATGTCAACACACAAGGCGTTCTTCCAGG'
+outf = './01_R1_fastq_feat/mis_rv.fa'
+
+cnt = 0
+with open(outf, 'w') as wf:
+    with open(file, 'r') as rf:
+        for line in rf.readlines():
+            line = line.rstrip('\n')
+            if line != reverse:
+                cnt += 1
+                id = '>seq_' + str(cnt)
+                wf.write(f'{id}\n')
+                wf.write(f'{line}\n')
+
+# %%
+
+file = '/Users/tomoyauchiyama/code/Consensus_frequency/01_R1_fastq_feat/K4BR8_PG4536_01B2003_H1_L001_R1.fastq.gz'
+outf = './01_R1_fastq_feat/insert_seq.fa'
+
+cnt = 0
+with open(outf, 'w') as wf:
+   with gzip.open(file, 'rt') as fq:
+        for line in fq.readlines():
+            line = line.rstrip('\n')
+            if re.compile(r'^@').search(line):
+                flag = 1
+                cnt += 1
+            else:
+                if flag == 1:
+                    id = '>seq_' + str(cnt)
+                    wf.write(f'{id}\n')
+                    seq = line[46:67]
+                    wf.write(f'{seq}\n')
+                    flag = 0
+
+# %%
+# meme parse ----------------------------------
+import pandas as pd
+
+meme_res = '/Users/tomoyauchiyama/code/Consensus_frequency/01_R1_fastq_feat/insert_freq/meme.txt'
+
+#ALPHABET= ACGT
+#letter-probability matrix: alength= 4 w= 21 nsites= 61416 E= 5.5e-672
+flag = 0
+cnt = 0
+nucl_freq = pd.DataFrame()
+with open(meme_res, 'r') as meme:
+    for line in meme.readlines():
+        line = line.rstrip('\n')
+        if 'letter-probability' in line:
+            flag = 1
+            tmp = line.split()
+            N = int(tmp[5])
+        else:
+            if flag == 1:
+                cnt += 1
+                if cnt == N:
+                    flag = 0
+                tmp = line.split()
+                freq = pd.Series([float(i) for i in tmp])
+                nucl_freq = nucl_freq.append(freq, ignore_index=True)
+
+nucl_freq.columns = ['A', 'C', 'G', 'T']
+nucl_freq['pos'] = nucl_freq.index + 1
+
+# %%
+print(nucl_freq)
+# %%
+print(nucl_freq.plot.bar())
+
+# %%
+print(type(nucl_freq.loc[i, nucl_freq.columns[4]]))
+
+# %%
+# nucl frequency visialization ---------------------
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+fig = make_subplots()
+colors = ['red', 'blue', '#f1c40f', 'green'] # ['A', 'C', 'G', 'T']
+
+for j in range(4):
+    fig.add_trace(
+        go.Bar(
+            x=nucl_freq[nucl_freq.columns[4]],
+            y=nucl_freq[nucl_freq.columns[j]],
+            name=nucl_freq.columns[j],
+            marker=dict(color=colors[j])
+        )
+    )
+
+fig.update_layout(
+    plot_bgcolor='white'
+    #height=800,
+    #width=900
+)
+fig.update_xaxes(
+    title='Position',
+    showline=True,
+    linewidth=1,
+    linecolor='black',
+    mirror=True,
+    ticks='inside',
+    #range=(min_x, max_x),
+    dtick=1
+)
+fig.update_yaxes(
+    title='Frequncy',
+    showline=True,
+    linewidth=1,
+    linecolor='black',
+    mirror=True,
+    ticks='inside',
+    range=(0, 1),
+    dtick=0.1
+)
+
+fig.show()
+
+outdir = '/Users/tomoyauchiyama/code/Consensus_frequency/01_R1_fastq_feat'
+htmlfile = os.path.join(
+    outdir,
+    'insert_nucl_freq.html'
+)
+fig.write_html(htmlfile)
+
+# %%
