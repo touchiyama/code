@@ -368,6 +368,10 @@ with open(outf, 'w') as wf:
                 id = '>seq_' + str(cnt)
                 wf.write(f'{id}\n')
                 wf.write(f'{line}\n')
+
+# %%
+# meme -dna mis_fw.fa -minw 46 -maxw 46 -o mis_fw_freq/
+
 # %%
 file = '/Users/tomoyauchiyama/Downloads/K4BR8_PG4536_01B2003_H1_L001_R1.fastq.gz'
 outf = './01_R1_fastq_feat/rv.fa'
@@ -402,6 +406,11 @@ with open(outf, 'w') as wf:
                 wf.write(f'{line}\n')
 
 # %%
+# meme -dna mis_rv.fa -minw 46 -maxw 46 -o mis_rv_freq/
+
+
+
+# %%
 
 file = '/Users/tomoyauchiyama/code/Consensus_frequency/01_R1_fastq_feat/K4BR8_PG4536_01B2003_H1_L001_R1.fastq.gz'
 outf = './01_R1_fastq_feat/insert_seq.fa'
@@ -421,6 +430,9 @@ with open(outf, 'w') as wf:
                     seq = line[46:67]
                     wf.write(f'{seq}\n')
                     flag = 0
+
+# %%
+# meme -dna insert_seq.fa -minw 21 -maxw 21 -o insert_freq/
 
 # %%
 # meme parse ----------------------------------
