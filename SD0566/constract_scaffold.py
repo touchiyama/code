@@ -267,4 +267,5 @@ with open(outf, 'w') as wf:
             tmp = line.split()
             if str.isdigit(tmp[0]):
                 wf.write(f'{line}\n')
+
 # %%

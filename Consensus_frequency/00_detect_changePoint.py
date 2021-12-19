@@ -526,3 +526,155 @@ htmlfile = os.path.join(
 fig.write_html(htmlfile)
 
 # %%
+"""parfect matchパターンに対応した挿入配列の特徴を掴む
+"""
+ref = 'GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCCAGAGAGGC'
+file = '/Users/tomoyauchiyama/code/Consensus_frequency/01_R1_fastq_feat/K4BR8_PG4536_12B2106_H1_L001_R1.fastq.gz'
+outf1 = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/fw/insert.fa'
+
+flag = 0
+cnt1 = 0
+with open(outf1, 'w') as wf1:
+    with gzip.open(file, 'rt') as fq:
+        for line in fq.readlines():
+            line = line.rstrip('\n')
+            if re.compile(r'^@').search(line):
+                flag = 1
+                cnt1 += 1
+            else:
+                if flag == 1:
+                    forward = line[:46]
+                    insert = line[:114]
+                    if ref == forward:
+                        wf1.write(f'>{cnt1}\n')
+                        wf1.write(f'{insert}\n')
+                    flag = 0
+
+# %%
+"""mismatchパターンに対応した挿入配列の特徴を掴む
+"""
+#for1 = 'GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCCAGAGAGGC'
+#GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGC[AC]A[CG]AGA[CG][AG][AC]
+#GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCAACAGACAA
+#GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCCAGAGAGGC
+
+# mis freq = 13070/76398 = 0.171
+
+import re
+import gzip
+
+pat1 = 'GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCCAGAGAGGC' #refとperfectmatch
+pat2 = 'GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCAACAGACAA' #refとmismatch
+
+file = '/Users/tomoyauchiyama/code/Consensus_frequency/01_R1_fastq_feat/K4BR8_PG4536_12B2106_H1_L001_R1.fastq.gz'
+outf1 = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/fw_mis/pat1_insert.fa'
+outf2 = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/fw_mis/pat2_insert.fa'
+outf3 = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/fw_mis/pat3_insert.fa'
+
+flag = 0
+cnt1 = 0
+cnt2 = 0
+cnt3 = 0
+with open(outf1, 'w') as wf1:
+    with open(outf2, 'w') as wf2:
+        with open(outf3, 'w') as wf3:
+            with gzip.open(file, 'rt') as fq:
+                for line in fq.readlines():
+                    line = line.rstrip('\n')
+                    if re.compile(r'^@').search(line):
+                        flag = 1
+                        cnt1 += 1
+                        cnt2 += 1
+                        cnt3 += 1
+                    else:
+                        if flag == 1:
+                            forward = line[:46]
+                            insert = line[:114]
+                            if pat1 == forward:
+                                wf1.write(f'>{cnt1}\n')
+                                wf1.write(f'{insert}\n')
+                            elif pat2 == forward:
+                                wf2.write(f'>{cnt2}\n')
+                                wf2.write(f'{insert}\n')
+                            else:
+                                wf3.write(f'>{cnt3}\n')
+                                wf3.write(f'{insert}\n')
+                            flag = 0
+
+"""
+    meme -dna ./pat1_insert.fa -minw 114 -maxw 114 -o ./pat1_freq
+    meme -dna ./pat2_insert.fa -minw 114 -maxw 114 -o ./pat2_freq
+    meme -dna ./pat3_insert.fa -minw 114 -maxw 114 -o ./pat3_freq
+
+   63328 pat1_insert.fa
+    7798 pat2_insert.fa
+    5272 pat3_insert.fa
+"""
+# %%
+# logomekerでシーケンスロゴを作成-------------------------
+# https://logomaker.readthedocs.io/en/latest/examples.html
+# pip install logomaker
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import logomaker as lm
+
+# %%
+color_scheme = lm.list_color_schemes()
+print(color_scheme)
+
+# %%
+# meme parse ----------------------------------
+import pandas as pd
+
+meme_res = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/fw_mis/pat3_freq/meme.txt'
+
+#ALPHABET= ACGT
+#letter-probability matrix: alength= 4 w= 21 nsites= 61416 E= 5.5e-672
+flag = 0
+cnt = 0
+nucl_freq = pd.DataFrame()
+with open(meme_res, 'r') as meme:
+    for line in meme.readlines():
+        line = line.rstrip('\n')
+        if 'letter-probability' in line:
+            flag = 1
+            tmp = line.split()
+            N = int(tmp[5])
+        else:
+            if flag == 1:
+                cnt += 1
+                if cnt == N:
+                    flag = 0
+                tmp = line.split()
+                freq = pd.Series([float(i) for i in tmp])
+                nucl_freq = nucl_freq.append(freq, ignore_index=True)
+
+nucl_freq.columns = ['A', 'C', 'G', 'T']
+#nucl_freq['pos'] = nucl_freq.index + 1
+
+# %%
+
+logo = lm.Logo(
+    nucl_freq,
+    baseline_width=0.1,
+    vpad=0.08,
+    fade_probabilities=True,
+    stack_order='small_on_top',
+    #font_name='Luxi Mono',
+    #color_scheme='class',
+    #font_name='Rosewood Std',
+    figsize=(30, 2.5)
+)
+
+logo.style_spines(spines=['left', 'right'], visible=False)
+
+# style using Axes methods
+logo.ax.set_xticks(np.arange(0, len(nucl_freq), step=5))
+logo.ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
+logo.ax.set_xlabel('Position')
+logo.ax.set_ylabel('Probability')
+plt.show()
+
+# %%
