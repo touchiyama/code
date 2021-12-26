@@ -7,12 +7,31 @@
 > → 結果の可視化には、挿入配列前後の配列も追加 (スクリプト参照) <br>
 > → 存在頻度を出す（生物学的な条件によって使い分けをしていることを考える）<br>
 > → 以下にその解析結果を示す <br>
+
+> ## ・PG4536_12 <br>
+> トリム時にmismatchを許容したリードの処理（=全リードを対象）時の挿入配列21塩基 <br>
+>> ![](img/PG4536_12_insert_mismatch.png) <br>
+>>
+> perfect matchしたリードの処理時の挿入配列21塩基 <br>
+>> ![](img/PG4536_12_insert_fullmatch.png) <br>
+>> -> マイナーパターン(10%)の情報が失われている <br>
 >
-> ・PG4536_12 <br>
->> (1) perfect match  63328 seqs / 76398 seqs = 0.829 <br>
+> 事前無情報に基づく塩基の頻度 <br>
+>> (1) perfect matchしたリードの処理　63328 seqs / 76398 seqs = 0.829 <br>
+>> ![](img/PG4536_12_match_pre.png) <br>
+>>
+>> (2) mismatchを許容したリードの処理 <br>
+>> (i) Pattern1 (refとperfectmatch)  5272/13070 = 0.403  →  0.171 x 0.403 = 0.0689 (7%) <br>
+>> ![](img/PG4536_12_pat1_pre.png) <br>
+>>
+>> (ii)  Pattern2 (refとmismatch) 7798/13070 = 0.597 → 0.171 x 0.597 = 0.102 (10%) → マイナータイプ ? <br>
+>> ![](img/PG4536_12_pat2_pre.png)
+>>
+> 事後確率に基づく塩基の頻度 <br>
+>> (1) perfect matchしたリードの処理  63328 seqs / 76398 seqs = 0.829 <br>
 >> ![](img/PG4536_12_match.png)
 >>
->> (2) mismatch  13070 seqs / 76398 seqs = 0.171 <br>
+>> (2) mismatchを許容したリードの処理  13070 seqs / 76398 seqs = 0.171 <br>
 >> (i) Pattern1 (refとperfectmatch)  5272/13070 = 0.403  →  0.171 x 0.403 = 0.0689 (7%) <br>
 >> ![](img/PG4536_12_pat1.png)
 >>

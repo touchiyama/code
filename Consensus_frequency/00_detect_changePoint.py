@@ -601,7 +601,7 @@ with open(outf1, 'w') as wf1:
                                 wf3.write(f'{insert}\n')
                             flag = 0
 
-"""
+"""事後確率
     meme -dna ./pat1_insert.fa -minw 114 -maxw 114 -o ./pat1_freq
     meme -dna ./pat2_insert.fa -minw 114 -maxw 114 -o ./pat2_freq
     meme -dna ./pat3_insert.fa -minw 114 -maxw 114 -o ./pat3_freq
@@ -610,6 +610,130 @@ with open(outf1, 'w') as wf1:
     7798 pat2_insert.fa
     5272 pat3_insert.fa
 """
+
+
+# %%
+# 事前確率 ---------------------------------------------------------
+import glob
+
+fa_dir = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/fw_mis'
+glob_list = glob.glob(os.path.join(fa_dir, '*fa'))
+
+for fas in glob_list:
+    nucl = pd.DataFrame()
+    with open(fas, 'r') as rf:
+        for line in rf.readlines():
+            line = line.rstrip('\n')
+            if re.compile(r'^>').search(line):
+                flag = 1
+            else:
+                if flag == 1:
+                    insert = pd.Series([str(i) for i in line])
+                    nucl = nucl.append(insert, ignore_index=True)
+                    flag = 0
+
+    col = [str(i) for i in range(1, nucl.columns.size + 1)]
+    nucl.columns = col
+
+    total = nucl.index.size
+    pos_freq = pd.DataFrame()
+    for pos in col:
+        col_list = list(nucl[pos])
+        A = col_list.count('A') / total
+        T = col_list.count('T') / total
+        G = col_list.count('G') / total
+        C = col_list.count('C') / total
+        N = col_list.count('N') / total
+        freq = pd.Series([A, T, G, C, N])
+        pos_freq = pos_freq.append(freq, ignore_index=True)
+
+    pos_freq.columns = ['A', 'T', 'G', 'C', 'N']
+    pos_freq.index += 1
+
+    color_scheme = {
+    'T' : [0, 0.5, 0], # green
+    'A' : [1, 0, 0], # red
+    'G' : [1, 0.65, 0], # yellow
+    'C' :[0, 0, 1], # blue
+    'N': 'gray'
+    }
+    logo = lm.Logo(
+        pos_freq,
+        baseline_width=0.1,
+        vpad=0.08,
+        fade_probabilities=True,
+        stack_order='small_on_top',
+        color_scheme=color_scheme,
+        #font_name='Luxi Mono',
+        #color_scheme='class',
+        #font_name='Rosewood Std',
+        figsize=(30, 2.5)
+    )
+
+    logo.style_spines(spines=['left', 'right'], visible=False)
+
+    # style using Axes methods
+    logo.ax.set_xticks(np.arange(0, len(pos_freq), 5))
+    logo.ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
+    logo.ax.set_xlabel('Position')
+    logo.ax.set_ylabel('Probability')
+    plt.show()
+
+
+# %%
+# 事前確率　--------------------------------------------------------
+
+file = '/Users/tomoyauchiyama/code/Consensus_frequency/01_R1_fastq_feat/K4BR8_PG4536_12B2106_H1_L001_R1.fastq.gz'
+
+outf = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/freq_per_pos/insert_seq.fa'
+
+pat1 = 'GCAGTATGGTTCTGTATCTACCAACCTCCAGAGAGGCCAGAGAGGC' #refとperfectmatch
+
+#cnt = 0
+nucl = pd.DataFrame()
+with open(outf, 'w') as wf:
+   with gzip.open(file, 'rt') as fq:
+        for line in fq.readlines():
+            line = line.rstrip('\n')
+            if re.compile(r'^@').search(line):
+                flag = 1
+                cnt += 1
+            else:
+                if flag == 1:
+                    forward = line[:46]
+                    if pat1 == forward:
+                        seq = line[46:67]
+                        insert = pd.Series([str(i) for i in seq])
+                        nucl = nucl.append(insert, ignore_index=True)
+                    flag = 0
+
+# %%
+# dataframeの作成
+col = [str(i) for i in range(1, nucl.columns.size + 1)]
+nucl.columns = col
+
+# %%
+print(nucl)
+
+# %%
+total = nucl.index.size
+pos_freq = pd.DataFrame()
+for pos in col:
+    col_list = list(nucl[pos])
+    A = col_list.count('A') / total
+    T = col_list.count('T') / total
+    G = col_list.count('G') / total
+    C = col_list.count('C') / total
+    N = col_list.count('N') / total
+    freq = pd.Series([A, T, G, C, N])
+    pos_freq = pos_freq.append(freq, ignore_index=True)
+
+# %%
+pos_freq.columns = ['A', 'T', 'G', 'C', 'N']
+pos_freq.index += 1
+print(pos_freq)
+
+
 # %%
 # logomekerでシーケンスロゴを作成-------------------------
 # https://logomaker.readthedocs.io/en/latest/examples.html
@@ -656,22 +780,30 @@ nucl_freq.columns = ['A', 'C', 'G', 'T']
 
 # %%
 
+color_scheme = {
+    'T' : [0, 0.5, 0], # green
+    'A' : [1, 0, 0], # red
+    'G' : [1, 0.65, 0], # yellow
+    'C' :[0, 0, 1], # blue
+    'N': 'gray'
+}
 logo = lm.Logo(
-    nucl_freq,
+    pos_freq,
     baseline_width=0.1,
     vpad=0.08,
     fade_probabilities=True,
     stack_order='small_on_top',
+    color_scheme=color_scheme
     #font_name='Luxi Mono',
     #color_scheme='class',
     #font_name='Rosewood Std',
-    figsize=(30, 2.5)
+    #figsize=(30, 2.5)
 )
 
 logo.style_spines(spines=['left', 'right'], visible=False)
 
 # style using Axes methods
-logo.ax.set_xticks(np.arange(0, len(nucl_freq), step=5))
+logo.ax.set_xticks(np.arange(1, len(pos_freq)+1, step=1))
 logo.ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
 logo.ax.set_xlabel('Position')
 logo.ax.set_ylabel('Probability')

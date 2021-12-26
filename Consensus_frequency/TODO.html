@@ -374,11 +374,33 @@ code {
 → 結果の可視化には、挿入配列前後の配列も追加 (スクリプト参照) <br>
 → 存在頻度を出す（生物学的な条件によって使い分けをしていることを考える）<br>
 → 以下にその解析結果を示す <br></p>
-<p>・PG4536_12 <br></p>
+</blockquote>
 <blockquote>
-<p>(1) perfect match  63328 seqs / 76398 seqs = 0.829 <br>
+<h2 id="%E3%83%BBpg453612-br">・PG4536_12 <br></h2>
+<p>トリム時にmismatchを許容したリードの処理（=全リードを対象）時の挿入配列21塩基 <br></p>
+<blockquote>
+<p><img src="img/PG4536_12_insert_mismatch.png" alt=""> <br></p>
+</blockquote>
+<p>perfect matchしたリードの処理時の挿入配列21塩基 <br></p>
+<blockquote>
+<p><img src="img/PG4536_12_insert_fullmatch.png" alt=""> <br>
+-&gt; マイナーパターン(10%)の情報が失われている <br></p>
+</blockquote>
+<p>事前無情報に基づく塩基の頻度 <br></p>
+<blockquote>
+<p>(1) perfect matchしたリードの処理　63328 seqs / 76398 seqs = 0.829 <br>
+<img src="img/PG4536_12_match_pre.png" alt=""> <br></p>
+<p>(2) mismatchを許容したリードの処理 <br>
+(i) Pattern1 (refとperfectmatch)  5272/13070 = 0.403  →  0.171 x 0.403 = 0.0689 (7%) <br>
+<img src="img/PG4536_12_pat1_pre.png" alt=""> <br></p>
+<p>(ii)  Pattern2 (refとmismatch) 7798/13070 = 0.597 → 0.171 x 0.597 = 0.102 (10%) → マイナータイプ ? <br>
+<img src="img/PG4536_12_pat2_pre.png" alt=""></p>
+</blockquote>
+<p>事後確率に基づく塩基の頻度 <br></p>
+<blockquote>
+<p>(1) perfect matchしたリードの処理  63328 seqs / 76398 seqs = 0.829 <br>
 <img src="img/PG4536_12_match.png" alt=""></p>
-<p>(2) mismatch  13070 seqs / 76398 seqs = 0.171 <br>
+<p>(2) mismatchを許容したリードの処理  13070 seqs / 76398 seqs = 0.171 <br>
 (i) Pattern1 (refとperfectmatch)  5272/13070 = 0.403  →  0.171 x 0.403 = 0.0689 (7%) <br>
 <img src="img/PG4536_12_pat1.png" alt=""></p>
 <p>(ii) Pattern2 (refとmismatch) 7798/13070 = 0.597 → 0.171 x 0.597 = 0.102 (10%) → マイナータイプ ? <br>
