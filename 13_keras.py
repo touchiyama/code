@@ -29,7 +29,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import keras.optimizers
 from keras.models import Sequential
-from keras.layers.core import Dense, Activation
+from keras.layers.core import Dense, Activation, Dropout
+from tensorflow.python.keras.backend import dropout
 
 # %%
 # データ生成 --------------------------------
@@ -210,6 +211,7 @@ fig.show()
 # optimizerの設定では、tensorflowのkerasを用いる
 from tensorflow import keras
 from tensorflow.keras import optimizers
+from tensorflow.keras.optimizers import Adam
 
 # %%
 # 2層FNN(フィードフォワードニューラルネット)による3クラス分類modelの作成 -------------
@@ -219,12 +221,13 @@ model = Sequential()
 # 中間層の設定
 model.add(
     Dense(
-        10,
+        15,
         input_dim=2,
         activation='relu', # sigmoid, tanh
         kernel_initializer='uniform'
     )
 )
+#model.add(Dropout(0.25))
 # 出力層の設定
 model.add(
     Dense(
@@ -235,7 +238,7 @@ model.add(
 )
 # 学習方法の設定
 sgd = optimizers.SGD(
-    lr=0.5,
+    lr=0.25,
     momentum=0.0,
     decay=0.0,
     nesterov=False
@@ -382,11 +385,9 @@ print(history.history.keys())
 # %%
 print(y[:, 1].reshape(xn, xn).T)
 
-
 # %%
 
 fig = make_subplots()
-
 
 xn = 60  # 等高線表示の解像度
 x0 = np.linspace(X_range0[0], X_range0[1], xn)

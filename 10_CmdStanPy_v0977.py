@@ -1392,7 +1392,8 @@ for i in range(1, n_row+1):
                 line=dict(color=colors[ii], width=2)
             ),
             row=i,
-            col=j)
+            col=j
+        )
         fig.add_trace(
             go.Scatter(
                 x=x,
@@ -1405,7 +1406,8 @@ for i in range(1, n_row+1):
                 )
             ),
             row=i,
-            col=j)
+            col=j
+        )
         fig.update_layout(
             plot_bgcolor='white',
             height=800,
