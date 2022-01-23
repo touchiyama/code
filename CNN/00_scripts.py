@@ -61,6 +61,10 @@ with h5py.File(infile, 'r') as h5:
     print(h5['test_out'][:,:,:].min())
 
 # %%
+import matplotlib.pyplot as plt
+print(plt.rcParams["figure.figsize"])
+
+# %%
 # 3種のChIP-seqデータ(テストデータ)の可視化 ----------------------
 fig = make_subplots()
 K = 3
@@ -171,6 +175,12 @@ valid_data = np.round(valid_out[0, :, :].astype(int)).transpose()
 
 
 # %%
+# 250番目のデータを使う
+test_data = np.round(test_out[249, :, :].astype(int)).transpose()
+train_data = np.round(train_out[249, :, :].astype(int)).transpose()
+valid_data = np.round(valid_out[249, :, :].astype(int)).transpose()
+
+# %%
 print(test_data.max())
 print(train_data.max())
 print(valid_data.max())
@@ -226,7 +236,7 @@ observed_data = dict(
     Y=test_data.tolist()
 )
 
-json_name = 'ChIP_merge' # have to change
+json_name = 'ChIP_merge_250' # have to change
 
 json_file = os.path.join(
     '/Users/tomoyauchiyama/code',
@@ -349,7 +359,8 @@ fit = sm.sample(
 )
 
 """
-実行時間：102m 17.8s
+1番目のデータの実行時間: 102m 17.8s
+250番目のデータの実行時間: 100m 44.5s
 """
 
 # %%
@@ -568,7 +579,7 @@ with h5py.File(infile, 'r') as h5:
         for j in range(1, n_col+1):
             ii += 1
 
-            cov = h5['test_out'][0, :, ii]
+            cov = h5['test_out'][249, :, ii]
             y = cov
             x = [i+1 for i in range(len(cov))]
             pre_y = pred_df.loc[ii, 'p50']
@@ -700,8 +711,140 @@ with h5py.File(infile, 'r') as h5:
     fig.show()
     htmlfile = os.path.join(
     '/Users/tomoyauchiyama/code/CNN/',
-    'CHIP-seq_data.html'
+    'CHIP-seq_data_250.html'
     )
     fig.write_html(htmlfile)
 
 # %%
+"""
+転写因子結合部位の同定、motif配列の探索
+・転写因子結合部位の同定で、どのピークを選択するかを決める
+① backgroundを調べる。実測値からbackgroundを引いたcovarageを
+　chip-peakと定義するか？
+② または、実測値の分布と予測値の散布図を描いて、
+　covrage上位5%の大きさ（両方の箱ひげを描く）を持つピークを探索対象とするか？
+-> ②をやってみる
+"""
+# valid_out
+
+y_title = 'Covarage'
+x_title = 'Position'
+main_title = 'CHIP-seq validation data'
+
+titles = []
+n = 9
+for i in range(n):
+    ID = int(i + 1)
+    name = 'CHIP_' + str(ID)
+    titles.append(name)
+
+colors = get_colorpalette(n + 1)
+probs = (10, 25, 50, 75, 90)
+pxx = [f'p{p}' for p in probs]
+n_row = 2
+n_col = 5
+
+fig = make_subplots(
+    rows=n_row,
+    cols=n_col,
+    subplot_titles=titles,
+    horizontal_spacing=0.05, # will change
+    vertical_spacing=0.15    # will change
+)
+
+ii = -1
+with h5py.File(infile, 'r') as h5:
+    min_x = 1
+    max_x = 1024
+    min_y = h5['valid_out'][:,:,:].min()
+    max_y = h5['valid_out'][:,:,:].max()
+
+    for i in range(1, n_row+1):
+        for j in range(1, n_col+1):
+            ii += 1
+
+            cov = h5['valid_out'][:, :, ii].mean(axis=0)
+            y = cov
+            x = [i+1 for i in range(len(cov))]
+            fig.add_trace(
+                go.Bar(
+                    x=x,
+                    y=y,
+                    marker_color=colors[ii]
+                    #opacity=
+                ),
+                row=i,
+                col=j
+            )
+            fig.update_layout(
+                plot_bgcolor='white'
+                #height=800,
+                #width=900
+            )
+            fig.update_xaxes(
+                title=x_title,
+                showline=True,
+                linewidth=1,
+                linecolor='black',
+                mirror=True,
+                ticks='inside',
+                range=(min_x, max_x),
+                row=i,
+                col=j
+            )
+            fig.update_yaxes(
+                title=y_title,
+                showline=True,
+                linewidth=1,
+                linecolor='black',
+                mirror=True,
+                ticks='inside',
+                range=(min_y, max_y),
+                row=i,
+                col=j
+            )
+
+    fig.for_each_xaxis(
+        lambda axis: axis.title.update(
+            font=dict(
+                color='black',
+                size=10
+            )
+        )
+    )
+    fig.for_each_yaxis(
+        lambda axis: axis.title.update(
+            font=dict(
+                color='black',
+                size=10
+            )
+        )
+    )
+    fig.update_layout(
+        title=dict(
+            text=main_title,
+            x=0.5,
+            xanchor='center'
+        ),
+        showlegend=False
+    )
+    fig.update_annotations(
+        font=dict(size=10)
+    )
+    fig.show()
+    htmlfile = os.path.join(
+    '/Users/tomoyauchiyama/code/CNN/',
+    'CHIP-seq_valdata_1.html'
+    )
+    fig.write_html(htmlfile)
+
+# %%
+"""
+転写因子結合部位の同定、motif配列の探索
+・転写因子結合部位の同定で、どのピークを選択するかを決める
+① backgroundを調べる。実測値からbackgroundを引いたcovarageを
+　chip-peakと定義するか？
+② または、実測値の分布と予測値の散布図を描いて、
+　covrage上位5%の大きさ（両方の箱ひげを描く）を持つピークを探索対象とするか？
+-> ②をやってみる
+"""
