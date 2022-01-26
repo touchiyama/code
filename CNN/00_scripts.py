@@ -548,7 +548,7 @@ x_title = 'Position'
 main_title = 'CHIP-seq data (*σ(r) = ' + str(round(s_r.mean(), 2)) + ')'
 
 titles = []
-n = 9
+n = 10
 for i in range(n):
     ID = int(i + 1)
     name = 'CHIP_' + str(ID)
@@ -848,3 +848,59 @@ with h5py.File(infile, 'r') as h5:
 　covrage上位5%の大きさ（両方の箱ひげを描く）を持つピークを探索対象とするか？
 -> ②をやってみる
 """
+import matplotlib.pyplot as plt
+
+pre = pred_df.loc[0, 'p50']
+with h5py.File(infile, 'r') as h5:
+    cov = h5['test_out'][249, :, 0]
+
+print(pd.Series(pre).quantile(0.95))
+print(pd.Series(cov).quantile(0.95))
+
+plt.scatter(pre, cov, c='k', s=7)
+plt.axhline(y=pd.Series(cov).quantile(0.95))
+plt.axvline(x=pd.Series(pre).quantile(0.95))
+plt.show()
+
+# %%
+
+data = []
+for i in range(10):
+    with h5py.File(infile, 'r') as h5:
+        pre = pred_df.loc[i, 'p50']
+        cov = h5['test_out'][249, :, i]
+
+        pre_95 = pd.Series(pre).quantile(0.95)
+        cov_95 = pd.Series(cov).quantile(0.95)
+
+        tmp = []
+        for j in range(len(pre)):
+            if (pre_95 < pre[j]) & (cov_95 < cov[j]):
+                tmp.append(j)
+
+        data.append(np.array(tmp, dtype=int))
+
+data = np.array(data)
+
+# %%
+
+out_dir = '/Users/tomoyauchiyama/code/CNN/fragment'
+nucl = ['A', 'T', 'C', 'G']
+for i in range(10):
+    fasta = os.path.join(out_dir, 'CHIP_' + str(i + 1) + '.fa')
+    print(fasta)
+    with open(fasta, 'w') as wf:
+        with h5py.File(infile, 'r') as h5:
+            for index in data[i]:
+                tmp = []
+                id = '>pos_' + str(index + 1)
+                start = index * 128
+                end = (index + 1) * 128
+                seq = h5['test_in'][249, start:end, :]
+                for j in range(len(seq)):
+                    tmp.append(nucl[seq[j].argmax()])
+                fragnemt = ''.join(tmp)
+                wf.write(f'{id}\n')
+                wf.write(f'{fragnemt}\n')
+
+# %%
