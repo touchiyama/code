@@ -4,7 +4,7 @@
 
 ### GitHubで100 MB以上のファイルをpushしようとしてエラーになった後の解決方法
 > 参考資料: <br>
-> 　[https://qiita.com/ffggss/items/b61e726bc8cbd3137956](https://qiita.com/ffggss/items/b61e726bc8cbd3137956) <br>
+> 　[aa](https://qiita.com/ffggss/items/b61e726bc8cbd3137956) <br>
 > ログを見て、origin/master, origin/HEAD記載箇所のmd5値を指定して、コマンド実行 <br>
 > ```bash
 > $ git reset --soft
@@ -24,7 +24,7 @@
 > Username: touchiyama <br>
 > Personal access tokens(パスワード): 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 <br>
 >
-> Webで自分のアカウントに入る　https://github.com/touchiyama　<br>
+> Webで自分のアカウントに入る https://github.com/touchiyama　<br>
 > レポジトリを作成する <br>
 
 ### 基本操作
