@@ -20,6 +20,10 @@
 >　[https://qiita.com/shiro01/items/e886aa1e4beb404f9038](https://qiita.com/shiro01/items/e886aa1e4beb404f9038) <br>
 > ・GitHubでhttpsのパスワード認証が廃止された。Please use a personal access token instead. <br>
 >　[https://qiita.com/shunsa10/items/e43564cf48f84b95455b](https://qiita.com/shunsa10/items/e43564cf48f84b95455b) <br>
+> ・個人アクセストークンを使用する <br>
+>　[https://docs.github.com/ja/authenticationkeeping-your-account-and-data-securecreating-a-personal-access-token](https://docs.github.com/ja/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) <br>
+> このトークンに付与するスコープ、すなわち権限を選択。<br>
+> この時、トークンを使用してコマンドラインからリポジトリにアクセスするには、[repo] を選択。<br>
 >
 > Username: touchiyama <br>
 > Personal access tokens(パスワード): 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 <br>
