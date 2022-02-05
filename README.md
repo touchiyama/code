@@ -26,7 +26,7 @@
 > この時、トークンを使用してコマンドラインからリポジトリにアクセスするには、[repo] を選択。<br>
 >
 > Username: touchiyama <br>
-> Personal access tokens(パスワード): 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 <br>
+> Personal access tokens(パスワード): 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 <br>
 >
 > Webで自分のアカウントに入る https://github.com/touchiyama <br>
 > レポジトリを作成する <br>
