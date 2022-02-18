@@ -17,22 +17,22 @@ LOGFILE = os.path.join(os.path.abspath("."),
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 class data2json:
-    def __init__(self, infile, legend, res_var, data, json_name, n):
+    def __init__(self, infile, legend, res_var, data, json_name, color, n):
         self.infile = infile
         self.legend = legend
         self.res_var = res_var
         self.data = data
         self.json_name = json_name
+        self.color = color
         self.n = n
 
-    def get_colorpalette(self):
+    def get_colorpalette(self, color, n_colors):
         """legendとRBG値を対応させるための関数
 
         Returns:
             rgb (list): RBG値が格納された配列
         """
-        n_colors = self.n
-        palette = sns.color_palette('hls', n_colors) #colorpalette = 'hls'
+        palette = sns.color_palette(color, n_colors) #colorpalette = 'hls'
         rgb = ['rgb({},{},{})'.format(*[x*256 for x in rgb]) for rgb in palette]
         return rgb
 
@@ -44,12 +44,10 @@ class data2json:
             x (dict): legendに対応したx
             color (dict): legendに対応したRBG値
         """
-        colors = self.get_colorpalette()
-
         y = {}
         x = {}
         color = {}
-
+        colors = self.get_colorpalette(self.color, self.n)
         #===================   data processing   ===================#
         for i in range(len(self.infile)):
             df = input_xlsx(self.infile[i], self.legend)
@@ -61,7 +59,10 @@ class data2json:
                 logger.error('Pls cheak parameter \'-i1\' or \'-i2\'.')
                 sys.exit()
 
-            y, x, color = extract_data(df, index, self.legend, self.data, y, x, color, i)
+            y, x, color = extract_data(
+                df, index, self.legend, self.data,
+                y, x, color, colors[i], i
+            )
 
         return y, x, color
 
@@ -128,7 +129,7 @@ def input_xlsx(infile, legends):
 
     return df
 
-def extract_data(df, index, legend, data, y, x, color, ii):
+def extract_data(df, index, legend, data, y, x, color, color_type, ii):
     """目的データを抽出する関数
 
     Args:
@@ -182,7 +183,7 @@ def extract_data(df, index, legend, data, y, x, color, ii):
                     y[name] = str(df.iloc[index, columns])
                     x[name] = str(data_value)
 
-                    color[legend] = None
+                    color[legend] = color_type
 
             else:
                 logger.error(f'data: {header} not found..')
@@ -190,6 +191,34 @@ def extract_data(df, index, legend, data, y, x, color, ii):
                 sys.exit()
 
     return x, y, color
+
+def display_color():
+    color_list = [
+        'Accent', 'Accent_r', 'Blues', 'Blues_r', 'BrBG', 'BrBG_r', 'BuGn', 'BuGn_r',
+        'BuPu', 'BuPu_r', 'CMRmap', 'CMRmap_r','Dark2', 'Dark2_r', 'GnBu', 'GnBu_r',
+        'Greens', 'Greens_r', 'Greys', 'Greys_r', 'OrRd', 'OrRd_r', 'Oranges', 'Oranges_r',
+        'PRGn', 'PRGn_r', 'Paired', 'Paired_r', 'Pastel1', 'Pastel1_r', 'Pastel2', 'Pastel2_r',
+        'PiYG', 'PiYG_r', 'PuBu', 'PuBuGn', 'PuBuGn_r', 'PuBu_r', 'PuOr', 'PuOr_r',
+        'PuRd', 'PuRd_r', 'Purples', 'Purples_r', 'RdBu', 'RdBu_r', 'RdGy','RdGy_r',
+        'RdPu', 'RdPu_r', 'RdYlBu', 'RdYlBu_r', 'RdYlGn', 'RdYlGn_r', 'Reds', 'Reds_r',
+        'Set1', 'Set1_r','Set2', 'Set2_r', 'Set3', 'Set3_r', 'Spectral', 'Spectral_r',
+        'Wistia', 'Wistia_r', 'YlGn', 'YlGnBu', 'YlGnBu_r', 'YlGn_r', 'YlOrBr', 'YlOrBr_r',
+        'YlOrRd', 'YlOrRd_r', 'afmhot', 'afmhot_r', 'autumn', 'autumn_r', 'binary', 'binary_r',
+        'bone', 'bone_r', 'brg', 'brg_r', 'bwr', 'bwr_r', 'cividis', 'cividis_r',
+        'cool', 'cool_r', 'coolwarm', 'coolwarm_r', 'copper', 'copper_r', 'crest', 'crest_r',
+        'cubehelix', 'cubehelix_r', 'flag', 'flag_r', 'flare', 'flare_r', 'gist_earth', 'gist_earth_r',
+        'gist_gray', 'gist_gray_r', 'gist_heat', 'gist_heat_r', 'gist_ncar', 'gist_ncar_r','gist_rainbow', 'gist_rainbow_r',
+        'gist_stern', 'gist_stern_r', 'gist_yarg', 'gist_yarg_r', 'gnuplot', 'gnuplot2', 'gnuplot2_r', 'gnuplot_r',
+        'gray', 'gray_r', 'hot', 'hot_r', 'hsv', 'hsv_r', 'icefire', 'icefire_r',
+        'inferno', 'inferno_r', 'jet', 'jet_r', 'magma', 'magma_r', 'mako', 'mako_r',
+        'nipy_spectral', 'nipy_spectral_r', 'ocean', 'ocean_r', 'pink', 'pink_r', 'plasma', 'plasma_r',
+        'prism', 'prism_r', 'rainbow', 'rainbow_r', 'rocket', 'rocket_r', 'seismic', 'seismic_r',
+        'spring', 'spring_r', 'summer', 'summer_r', 'tab10', 'tab10_r', 'tab20', 'tab20_r',
+        'tab20b', 'tab20b_r', 'tab20c', 'tab20c_r', 'terrain', 'terrain_r', 'turbo', 'turbo_r',
+        'twilight', 'twilight_r', 'twilight_shifted', 'twilight_shifted_r', 'viridis', 'viridis_r', 'vlag', 'vlag_r',
+        'winter', 'winter_r'
+    ]
+    return color_list
 
 def parameters(__desc__):
     """入力されたコマンドライン引数をパースする関数
@@ -254,6 +283,13 @@ def parameters(__desc__):
                         dest='json_name',
                         help='input json filename (You should include LotID)',
                         default=os.path.join(os.path.abspath('.'), os.path.basename(sys.argv[0]).replace('.py', ''))
+                        )
+    parser.add_argument('-c',
+                        dest='color',
+                        help='choose the following colors',
+                        choices=display_color(),
+                        type=str,
+                        default = 'hls'
                         )
     parser.add_argument('-log',
                         dest='loglevel',
@@ -325,6 +361,7 @@ def main(args):
     normal_data = args.X2
     outdir = args.out_dir
     json_name = args.json_name
+    color = args.color
     res_var = response_variable(y)
 
     #===================   praparation   ===================#
@@ -348,7 +385,7 @@ def main(args):
     #===================   run process   ===================#
     for i, rv in enumerate(res_var[0]):
         jsonName = os.path.join(outdir, json_name + '_' + res_var[1][i])
-        data2json(infile, legend, rv, Data, jsonName, n).output_json()
+        data2json(infile, legend, rv, Data, jsonName, color, n).output_json()
 
     logger.info('Done!')
     logger.info('')
