@@ -904,3 +904,98 @@ for i in range(10):
                 wf.write(f'{fragnemt}\n')
 
 # %%
+import plotly.express as px
+
+# %%
+fig = px.colors.sequential.swatches()
+fig.show()
+
+# %%
+print(px.colors.named_colorscales())
+
+# %%
+
+print(px.colors.sequential.Reds)
+
+# %%
+import seaborn as sns
+
+# %%
+color_list = [
+    'Accent', 'Accent_r', 'Blues', 'Blues_r', 'BrBG', 'BrBG_r', 'BuGn', 'BuGn_r',
+    'BuPu', 'BuPu_r', 'CMRmap', 'CMRmap_r','Dark2', 'Dark2_r', 'GnBu', 'GnBu_r',
+    'Greens', 'Greens_r', 'Greys', 'Greys_r', 'OrRd', 'OrRd_r', 'Oranges', 'Oranges_r',
+    'PRGn', 'PRGn_r', 'Paired', 'Paired_r', 'Pastel1', 'Pastel1_r', 'Pastel2', 'Pastel2_r',
+    'PiYG', 'PiYG_r', 'PuBu', 'PuBuGn', 'PuBuGn_r', 'PuBu_r', 'PuOr', 'PuOr_r',
+    'PuRd', 'PuRd_r', 'Purples', 'Purples_r', 'RdBu', 'RdBu_r', 'RdGy','RdGy_r',
+    'RdPu', 'RdPu_r', 'RdYlBu', 'RdYlBu_r', 'RdYlGn', 'RdYlGn_r', 'Reds', 'Reds_r',
+    'Set1', 'Set1_r','Set2', 'Set2_r', 'Set3', 'Set3_r', 'Spectral', 'Spectral_r',
+    'Wistia', 'Wistia_r', 'YlGn', 'YlGnBu', 'YlGnBu_r', 'YlGn_r', 'YlOrBr', 'YlOrBr_r',
+    'YlOrRd', 'YlOrRd_r', 'afmhot', 'afmhot_r', 'autumn', 'autumn_r', 'binary', 'binary_r',
+    'bone', 'bone_r', 'brg', 'brg_r', 'bwr', 'bwr_r', 'cividis', 'cividis_r',
+    'cool', 'cool_r', 'coolwarm', 'coolwarm_r', 'copper', 'copper_r', 'crest', 'crest_r',
+    'cubehelix', 'cubehelix_r', 'flag', 'flag_r', 'flare', 'flare_r', 'gist_earth', 'gist_earth_r',
+    'gist_gray', 'gist_gray_r', 'gist_heat', 'gist_heat_r', 'gist_ncar', 'gist_ncar_r','gist_rainbow', 'gist_rainbow_r',
+    'gist_stern', 'gist_stern_r', 'gist_yarg', 'gist_yarg_r', 'gnuplot', 'gnuplot2', 'gnuplot2_r', 'gnuplot_r',
+    'gray', 'gray_r', 'hot', 'hot_r', 'hsv', 'hsv_r', 'icefire', 'icefire_r',
+    'inferno', 'inferno_r', 'jet', 'jet_r', 'magma', 'magma_r', 'mako', 'mako_r',
+    'nipy_spectral', 'nipy_spectral_r', 'ocean', 'ocean_r', 'pink', 'pink_r', 'plasma', 'plasma_r',
+    'prism', 'prism_r', 'rainbow', 'rainbow_r', 'rocket', 'rocket_r', 'seismic', 'seismic_r',
+    'spring', 'spring_r', 'summer', 'summer_r', 'tab10', 'tab10_r', 'tab20', 'tab20_r',
+    'tab20b', 'tab20b_r', 'tab20c', 'tab20c_r', 'terrain', 'terrain_r', 'turbo', 'turbo_r',
+    'twilight', 'twilight_r', 'twilight_shifted', 'twilight_shifted_r', 'viridis', 'viridis_r', 'vlag', 'vlag_r',
+    'winter', 'winter_r'
+]
+
+# %%
+print(sns.color_palette('hls'))
+
+# %%
+print(len(color_list))
+# %%
+pos = ['B1', 'B2', 'B3', 'B2', 'A1', 'A2', 'A3', 'D1', 'D2', 'C1', 'C2']
+
+print(sorted(pos, key=lambda x: (int(x[1:]), x[0])))
+# %%
+import pandas as pd
+
+# %%
+sales_list1=[
+    ["B1", "iPhoneX", 85000, 1],
+    ["B2", "iPhoneXX", 260000, 2],
+    ["B3", "iPhoneKK", 37000, 1],
+    ["B2", "iPhoneXX-D", 130000, 1],
+    ["A1", "iPhoneCX", 130000, 1],
+    ["A2", "iPhoneYY-D", 130000, 1],
+    ["A2", "iPhoneYY", 130000, 1],
+    ["A3", "iPhoneSX", 130000, 1],
+    ["D1", "iPhoneTAX", 130000, 1],
+    ["D2", "iPhoneKKK", 130000, 1],
+    ["C1", "iPhoneOOP", 130000, 1],
+    ["C2", "iPhonePPA", 130000, 1],
+]
+columns1 = ["ID", "Name", "Amount (JPY)", "Qty"]
+df = pd.DataFrame(data=sales_list1, columns=columns1)
+print(df)
+
+# %%
+# Nameでsort
+# -> MassArray WSの座標位置決定の準備
+df_s = df.sort_values('Name')
+print(df_s)
+
+# %%
+# DataFrameで文字と数字を含む文字列の数字でsortする方法
+# -> MassArray WSの座標位置決定
+df_sort = df_s.sort_values(
+    by='ID',
+    key=lambda col: col.map(lambda x: (int(x[1:]), x[0]))
+)
+print(df_sort)
+
+# %%
+# 末尾に「-D」を含まないIDとNameの抽出
+# -> MassArray WSの座標位置決定後に行い、biomec_samplelistのdest wellの所に貼り付ける。
+print(df_sort[~df_sort['Name'].str.endswith('-D')][['ID','Name']])
+
+# %%
