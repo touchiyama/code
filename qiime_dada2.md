@@ -159,7 +159,10 @@
 ## Trimmomaticを介したdada2の利用 (トリミング長の検討)
 ***
 
-・やること：Trimmomaticでトリムしたfastqファイルをinputとして、DADA2にかける <br>
+・250bpがトリミング長として最適であるかを確かめるために、トリミング長変化に伴うnon-chimericリードの割合の変化を調べる。<br>
+
+・主にやること：Trimmomaticでトリムしたfastqファイルをinputとして、DADA2にかける <br>
+
 
 (1) minlenを210,220,230,240,250,260,270,300と設定し, QV20とQV30で分ける <br>
 (2) Trimmomatic終了後、以下のコマンドでダウンサンプリングを行う。<br>
