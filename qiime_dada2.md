@@ -154,3 +154,34 @@
 > --input-path rep-seqs.qza \
 > --output-path ./output
 > ```
+
+***
+## Trimmomaticを介したdada2の利用 (トリミング長の検討)
+***
+
+・やること：Trimmomaticでトリムしたfastqファイルをinputとして、DADA2にかける <br>
+
+(1) minlenを210,220,230,240,250,260,270,300と設定し, QV20とQV30で分ける <br>
+(2) Trimmomatic終了後、以下のコマンドでダウンサンプリングを行う。<br>
+```bash
+$ seqkit sample -p 0.05 -s 100000 bud_L001.fastq.gz -o XXXXX_210_sample_trimed.fastq.gz
+```
+(3) DADA2でfastqファイルのインポート（QV20とQV30で分ける）<br>
+・サンプル毎にmanifest.csvの作成 <br>
+  > sample-idを「PG4600_01_a_qv20_210」のようにする <br>
+
+・fastqファイルのインポート <br>
+```bash
+$ qiime tools import \
+--type SampleData[PairedEndSequencesWithQuality] \
+--input-path PG4600_01_a_manifest.csv \
+--output-path PG4600_a_trimed_seq.qza \
+--input-format PairedEndFastqManifestPhred33
+```
+
+(4) DADA2処理（QV20とQV30で分ける）<br>
+・FとRの長さを、Trimmomaticのminlenに合わせる <br>
+
+(5) stats summary tableを作り、可視化 <br>
+
+
