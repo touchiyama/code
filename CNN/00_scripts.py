@@ -999,3 +999,146 @@ print(df_sort)
 print(df_sort[~df_sort['Name'].str.endswith('-D')][['ID','Name']])
 
 # %%
+
+import re
+import glob
+import pandas as pd
+import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+
+# %%
+
+def get_colorpalette(n_colors):
+    """legendとRBG値を対応させる関数
+
+    Returns:
+        rgb (list): RBG値が格納された配列
+    """
+    palette = sns.hls_palette(n_colors, l=0.6, s=1)
+    #palette = sns.color_palette('hls', n_colors)
+    #colorpalette = 'hls'
+    rgb = ['rgb({},{},{})'.format(*[x*256 for x in rgb]) for rgb in palette]
+    return rgb
+
+
+# %%
+tsv_path = '/Users/tomoyauchiyama/code/CNN/DIST'
+
+titles = []
+for tsv in sorted(glob.glob(os.path.join(tsv_path, '*tsv')):
+    name = re.compile(r'DIST/(.*)_dist\.tsv').search(tsv).group(1)
+    titles.append(name)
+
+n = len(titles)
+colors = get_colorpalette(n+1)
+n_col = int(n/2)
+if (n%2) == 0:
+    n_row = int((n - n_col)/2) + 1
+else:
+    n_row = int((n - n_col)/2)
+
+fig = make_subplots(
+    rows=n_row,
+    cols=n_col,
+    subplot_titles=titles
+    #horizontal_spacing=0.05, # will change
+    #vertical_spacing=0.15    # will change
+)
+
+main_title = 'Distribution of length'
+y_title = 'Count'
+x_title = 'Position'
+
+ii = -1
+for i in range(1, n_row+1):
+    for j in range(1, n_col+1):
+        ii += 1
+        file = os.path.join(tsv_path, titles[ii] + '_dist.tsv')
+        df = pd.read_table(file)
+        x = df['V1']
+        y = df['count']
+        min_x = x.min()
+        max_x = x.max()
+        min_y = 0
+        max_y = y.max() + 50
+
+        fig.add_trace(
+            go.Bar(
+                x=x,
+                y=y,
+                marker=dict(
+                    color=colors[ii],
+                    line=dict(
+                        color='black',
+                        width=0.8
+                    )
+                )
+            ),
+            row=i,
+            col=j
+        )
+        fig.update_layout(
+            plot_bgcolor='white'
+        )
+        fig.update_xaxes(
+            title=x_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_x, max_x),
+            row=i,
+            col=j
+        )
+        fig.update_yaxes(
+            title=y_title,
+            showline=True,
+            linewidth=1,
+            linecolor='black',
+            mirror=True,
+            ticks='inside',
+            range=(min_y, max_y),
+            row=i,
+            col=j
+        )
+
+fig.for_each_xaxis(
+        lambda axis: axis.title.update(
+            font=dict(
+                color='black',
+                size=10
+            )
+        )
+)
+fig.for_each_yaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=10
+        )
+    )
+)
+fig.update_layout(
+    title=dict(
+        text=main_title,
+        x=0.5,
+        xanchor='center'
+    ),
+    showlegend=False
+)
+fig.update_annotations(
+    font=dict(size=10)
+)
+fig.show()
+
+htmlfile = os.path.join(
+    '/Users/tomoyauchiyama/code/CNN/DIST',
+    'DIST.html'
+)
+fig.write_html(htmlfile)
+
+# %%
