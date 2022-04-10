@@ -1,0 +1,20 @@
+MEME version 4
+
+ALPHABET= ACGT
+
+strands: + -
+
+Background letter frequencies (from uniform background):
+A 0.25000 C 0.25000 G 0.25000 T 0.25000 
+
+MOTIF HNRNPL_logoM027 
+
+letter-probability matrix: alength= 4 w= 7 nsites= 10 E= 0
+  0.737563	  0.146785	  0.057826	  0.057826	
+  0.191433	  0.686074	  0.011114	  0.111379	
+  0.966659	  0.011114	  0.011114	  0.011114	
+  0.110283	  0.671474	  0.011114	  0.207129	
+  0.884128	  0.011114	  0.011114	  0.093644	
+  0.274029	  0.703744	  0.011114	  0.011114	
+  0.716365	  0.213976	  0.034830	  0.034830	
+
