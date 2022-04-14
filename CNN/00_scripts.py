@@ -1151,3 +1151,39 @@ htmlfile = os.path.join(outdir, outfile)
 fig.write_html(htmlfile)
 
 # %%
+
+file = '/Users/tomoyauchiyama/code/PR2688/oRNAment/tmp/*PWM'
+outdir = '/Users/tomoyauchiyama/code/PR2688/oRNAment'
+for pwm in glob.glob(file):
+    name = os.path.splitext(os.path.basename(pwm))[0]
+    outfile = os.path.join(outdir, name + '.PWM')
+    with open(outfile, 'w') as wf:
+        with open(pwm, 'r') as rf:
+            for line in rf.readlines():
+                line = line.rstrip('\n')
+                if 'PO' in line:
+                    wf.write(f'>{name}\n')
+                else:
+                    tmp = line.split()
+                    row = '\t'.join(tmp[1:])
+                    wf.write(f'{row}\n')
+# %%
+file = '/Users/tomoyauchiyama/code/PR2688/oRNAment/*PWM'
+outdir = '/Users/tomoyauchiyama/code/PR2688/oRNAment'
+cmd = '/usr/local/Cellar/meme/5.1.0/libexec/libexec/meme-5.1.0/chen2meme'
+for pwm in glob.glob(file):
+    name = os.path.splitext(os.path.basename(pwm))[0]
+    outfile = os.path.join(outdir, name + '.meme')
+    print(f'{cmd} {pwm} > {outfile}')
+    os.system(f'{cmd} {pwm} > {outfile}')
+# %%
+
+import statsmodels.stats.multitest as multi
+from statsmodels.stats.proportion import proportions_ztest
+
+pval = proportions_ztest([5, 4], [100, 100], alternative='two-sided')
+pval_corr = multi.multipletests(pval[1], alpha=0.05, method='fdr_bh')
+
+# %%
+pval_corr[1]
+# %%
