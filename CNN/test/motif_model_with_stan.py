@@ -726,3 +726,5 @@ B = data['Depth_80Gb'].to_numpy()
 res = stats.wilcoxon(A, B)
 
 print(res)
+
+# y軸:オッズ比ーx軸:seqID
