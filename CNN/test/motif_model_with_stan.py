@@ -628,3 +628,101 @@ array([0.990883 , 1.010306 , 1.009148 ,
 """
 
 # %%
+import numpy as np
+import matplotlib.pyplot as plt
+
+mu1, sigma1 = 100, 15
+mu2, sigma2 = 70, 6
+x1 = mu1 + sigma1 * np.random.randn(10000)
+x2 = mu2 + sigma2 * np.random.randn(10000)
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+plt.hist(x1, bins=50, density=True, rwidth=0.8, color='red', alpha=0.5)
+plt.hist(x2, bins=50, density=True, rwidth=0.8, color='blue', alpha=0.5)
+ax.set_title('sixth histogram $\mu1=100,\ \sigma1=15,\ \mu2=50,\ \sigma2=4$')
+ax.set_xlabel('x')
+ax.set_ylabel('freq')
+ax.set_ylim(0,0.1)
+plt.show()
+# %%
+# ライブラリー結果のモデリング --------------------------------
+import pandas as pd
+
+file = '/Users/tomoyauchiyama/code/PC0174_PC0131_LIB_summmary_211110.xlsx'
+lib_df = pd.read_excel(file).dropna(subset=['Depth_80Gb'])
+
+# %%
+pd.set_option('display.max_columns', None)
+print(lib_df)
+
+# %%
+lib_df['d_Depth'] = lib_df['Depth_80Gb'] - lib_df['Depth_40Gb']
+
+# %%
+df1 = lib_df[lib_df['batch']=='PC0174_A'].loc[:, ['batch','name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+df2 = lib_df[lib_df['batch']=='PC0174_B'].loc[:, ['batch', 'name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+df3 = lib_df[lib_df['batch']=='PC0174_C'].loc[:, ['batch', 'name', 'input', 'frag_total', 'Depth_40Gb', 'Depth_80Gb', 'd_Depth']]
+data = df1.append(df2).append(df3)
+
+print(data)
+
+# %%
+df1 = lib_df[lib_df['bs']=='BS0401_210929'].loc[:, ['Depth_40Gb', 'Depth_80Gb']]
+df2 = lib_df[lib_df['batch']=='PC0174_B'].loc[:, ['Depth_40Gb', 'Depth_80Gb']]
+df3 = lib_df[lib_df['batch']=='PC0174_C'].loc[:, ['Depth_40Gb', 'Depth_80Gb']]
+data = df1.append(df2).append(df3)
+df_melt = pd.melt(data)
+
+print(df_melt)
+# %%
+
+# データ分布の可視化 --------------------------------
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1)
+
+sns.boxplot(
+    x='variable',
+    y='value',
+    data=df_melt,
+    showfliers=False,
+    width=0.4,
+    ax=ax
+)
+sns.stripplot(
+    x='variable',
+    y='value',
+    data=df_melt,
+    jitter=False,
+    color='black',
+    ax=ax,
+    size=3
+)
+plt.plot(
+    ['Depth_40Gb', 'Depth_80Gb'],
+    [data['Depth_40Gb'].to_list(), data['Depth_80Gb'].to_list()],
+    color = 'black',
+    linewidth = 1.0,
+    linestyle = '--'
+)
+ax.set_xlim(-0.5, 1.5)
+ax.set_ylim(0, data['Depth_80Gb'].max()+100)
+
+# %%
+# 対応のある2群の検定（Wilcoxonの符号付順位和検定）-----
+"""
+WilcoxonResult(statistic=0.0, pvalue=1.9073486328125e-06)
+Depthが80Gbの時、有意に上昇している
+"""
+import numpy as np
+from scipy import stats
+
+A = data['Depth_40Gb'].to_numpy()
+B = data['Depth_80Gb'].to_numpy()
+res = stats.wilcoxon(A, B)
+
+print(res)
