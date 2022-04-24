@@ -5,12 +5,32 @@
 ### (1) リード処理
 > ![](./PR2688_method_01.png) <br>
 
+### (1.5) k-merの範囲の絞り込み
+> 5-mer -> 8 merと変化させた時にIVT前後で分布がずれていく様子が観察できれば良い <br>
+> この時、IVT前で正規分布がかけることが前提条件となる <br>
+>> まずは、IVT前でJellyfish countによる最適なk-merを以下の方法で探索 <br>
+>> (1) X回出現するユニークなk-mer数の最大値を求める <br>
+>> (2) 異なるk-mer間の最大値同士を比較し、その中でも最大なる時のk-merをベストk-merと定義 <br>
+>
+> k-merプロファイリングの活用 <br>
+>> (1) 配列検索のフィルタリング <br>
+>> (2) de Brujin グラフによるゲノムアセンブリ <br>
+>> (3) 種の判別 <br>
+>
+> k-mer解析ツール <br>
+>> ・k-merカウントツール：Squeakr <br>
+>> ・kat hist
+>> ・jellyfish count、histo
+>
+> 参考：TFBS長の分布 <br>
+>> ![](./TFBS_len.png)
+
 ### (2) 目的配列の抽出
 > ![](./PR2688_method_02.png) <br>
-
+> 散布図は以下の以下のように修正 <br>
+> ![](./PR2688_method_04.png) <br>
 ### (3) 目的配列内のAGCT比率に偏りがある領域の同定
 > ![](./PR2688_method_03.png) <br>
-
 ### 例) デモデータを用いて、各位置におけるAGCT出現頻度の予測
 > ![](./exam_model_01.png) <br>
 > ![](./exam_model_02.png) <br>

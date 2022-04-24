@@ -868,3 +868,27 @@ plt.show()
 
 # %%
 (-1) * np.log10(0.05)
+
+# %%
+file = '/Users/tomoyauchiyama/code/CNN/test/TFBS_len.txt'
+df = pd.read_csv(file)
+
+# %%
+df.describe()['V1']['min']
+
+# %%
+df.min()
+
+# %%
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+plt.hist(df, bins=20, rwidth=0.8, color='red', alpha=0.5, range=(0, 40))
+ax.set_title('Distribution of nr TFBS length (JASPAR_vertebrates)')
+ax.set_xlabel('Length')
+ax.set_ylabel('Count')
+plt.vlines(df.min(), 0, 300, colors='red', linestyle='-.', linewidth=2)
+plt.vlines(df.mean(), 0, 300, colors='gray', linestyle='--', linewidth=3)
+#plt.axvline(df.mean(), color='gray', linestyle='--')
+plt.show()
+# %%
