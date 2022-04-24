@@ -733,6 +733,7 @@ print(res)
 # 2群の比率の検定（両側検定）-> BH法でFDR算出 ------------------
 import statsmodels.stats.multitest as multi
 from statsmodels.stats.proportion import proportions_ztest
+import scipy.stats as st
 
 # %%
 x1_total = 12762
@@ -740,19 +741,26 @@ x2_total = 11291
 
 x1 = 1 + 2 * np.random.randn(500)
 x1 = np.abs(x1)
-x2 = 1 + 2 * np.random.randn(500)
+x2 = 5 + 2 * np.random.randn(500)
 x2 = np.abs(x2)
 
 # %%
 pval = []
 for i in range(len(x1)):
+    """
     p = proportions_ztest(
         [x1[i], x2[i]],
         [x1_total, x2_total],
         alternative='two-sided'
     )
+    """
+    x1u = x1_total - int(x1[i])
+    x2u = x2_total - int(x2[i])
+    p = st.fisher_exact(
+        [[int(x1[i]), int(x2[i])], [x1u, x2u]],
+        alternative='two-sided'
+    )
     pval.append(p[1])
-
 
 # %%
 fdr = multi.multipletests(
@@ -763,26 +771,44 @@ fdr = multi.multipletests(
 x1x2_fdr = fdr[1]
 
 # %%
-x1x2_fdr
-
-# %%
 p = proportions_ztest(
     [1, 4],
     [23777220, 20266770],
     alternative='two-sided'
 )
+print(p[1])
 
 # %%
+p = st.fisher_exact(
+    [[1, 4], [23777220-1, 20266770-4]]
+)
 p[1]
 
 # %%
-x1_de = x1_total - x1
-x2_de = x2_total - x2
+x1_de = x1_total - x1.astype(int)
+x2_de = x2_total - x2.astype(int)
 x1_ratio = x1 / x1_de
 x2_ratio = x2 / x2_de
 x1x2_odds = x1_ratio / x2_ratio
 # %%
 x1x2_odds
+
+# %%
+# DataFrameの作成
+id = ['Seq_'+ str(i+1) for i in range(len(x1))]
+df = pd.DataFrame([id, x1, x2, x1x2_odds, x1x2_fdr]).transpose()
+df.columns = ['SeqID', 'A', 'C', 'Odds-ratio', 'FDR']
+
+#%%
+df
+
+# %%
+df_sort = df.sort_values(by='Odds-ratio', ascending=False)
+print(df_sort)
+# %%
+df_sort = df.sort_values(by='FDR', ascending=True)
+print(df_sort)
+
 # %%
 # x軸:SeqID、y1軸:-log10(FDR)、y2軸:オッズ比とした時の2軸プロット -----
 import matplotlib.pyplot as plt
@@ -800,21 +826,25 @@ ax1.scatter(x, y1, color='red', s=1.2, label='-log10(FDR)')
 ax2.scatter(x, y2, color='black', s=1.2, label='Odds-ratio')
 
 ax1.set_ylim(0, y1.max()+2)
-ax1.axhline((-1) * np.log10(0.05), color='gray')
+ax1.axhline((-1) * np.log10(0.05), color='gray', linestyle='--')
 ax2.set_ylim(0, x1x2_odds.max()+1)
 
 ax1.set_xlabel('SeqID')
 ax1.set_ylabel('-log10(FDR)')
 ax2.set_ylabel('Odds-ratio')
 
-
-plt.legend(
+ax1.legend(
     bbox_to_anchor=(1.1, 1),
     loc='upper left',
     borderaxespad=0,
     fontsize=10
 )
-
+ax2.legend(
+    bbox_to_anchor=(1.1, 0.90),
+    loc='upper left',
+    borderaxespad=0,
+    fontsize=10
+)
 plt.show()
 
 # %%
@@ -824,37 +854,17 @@ ax = fig.subplots()
 
 x = x1x2_odds
 y = (-1) * np.log10(x1x2_fdr)
-ax.scatter(x, y, color='black', s=1.2)
+ax.scatter(x, y, color='black', s=8)
 
 ax.set_xlim(0, x1x2_odds.max()+1)
 ax.set_ylim(0, y.max()+2)
-ax.axvline(50, color='gray')
-ax.axhline((-1) * np.log10(0.05), color='gray')
+ax.axvline(1, color='gray', linestyle='--')
+ax.axhline((-1) * np.log10(0.05), color='gray', linestyle='--')
 
 ax.set_xlabel('Odds-ratio')
 ax.set_ylabel('-log10(FDR)')
-
-"""
-plt.legend(
-    bbox_to_anchor=(1.1, 1),
-    loc='upper left',
-    borderaxespad=0,
-    fontsize=10
-)
-"""
 
 plt.show()
 
 # %%
 (-1) * np.log10(0.05)
-
-# %%
-
-ax.set_ylim(0, 1)
-plt.legend(
-    bbox_to_anchor=(1.05, 1),
-    loc='upper left',
-    borderaxespad=0,
-    fontsize=10
-)
-#ax.legend(loc="upper right")
