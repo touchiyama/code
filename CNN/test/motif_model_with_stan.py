@@ -50,6 +50,11 @@ pos_freq.index += 1
 print(pos_freq)
 
 # %%
+pos_freq = pd.read_excel('/Users/tomoyauchiyama/code/CNN/test/PR2688_C_60nt.xlsx')
+pos_freq.index += 1
+print(pos_freq)
+
+# %%
 # logomekerでシーケンスロゴを作成-------------------------------------
 # https://logomaker.readthedocs.io/en/latest/examples.html
 # pip install logomaker
@@ -65,7 +70,7 @@ logo = lm.Logo(
     pos_freq,
     baseline_width=0.1,
     vpad=0.08,
-    fade_probabilities=True,
+    fade_probabilities=False,
     stack_order='small_on_top',
     color_scheme=color_scheme
     #font_name='Luxi Mono',
@@ -77,7 +82,7 @@ logo = lm.Logo(
 logo.style_spines(spines=['left', 'right'], visible=False)
 
 # style using Axes methods
-logo.ax.set_xticks(np.arange(1, len(pos_freq)+1, step=1))
+logo.ax.set_xticks(np.arange(1, len(pos_freq)+1, step=2))
 logo.ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
 logo.ax.set_xlabel('Position')
 logo.ax.set_ylabel('Probability')
@@ -890,5 +895,250 @@ ax.set_ylabel('Count')
 plt.vlines(df.min(), 0, 300, colors='red', linestyle='-.', linewidth=2)
 plt.vlines(df.mean(), 0, 300, colors='gray', linestyle='--', linewidth=3)
 #plt.axvline(df.mean(), color='gray', linestyle='--')
+plt.show()
+# %%
+
+def k_mer(k, nucl):
+    if k == 1:
+        k_mer()
+        #return tmp
+    else:
+        tmp = []
+        for i in nucl:
+            for base in ['A', 'T', 'G', 'C']:
+                seq = i + base
+                tmp.append(seq)
+        new_nucl = tmp
+        k_mer(k-1, new_nucl)
+
+
+# %%
+
+nucl = ['A', 'T', 'G', 'C']
+res = k_mer(4, nucl)
+
+# %%
+print(res)
+
+# %%
+for i in ['A', 'T', 'G', 'C']:
+    seq = k_mer(4, i)
+    print(seq)
+# %%
+print(k_mer(4))
+# %%
+ATGC = ['A', 'T', 'G', 'C']
+tmp = []
+for i in ATGC:
+    for j in ATGC:
+        seq = i + j
+        tmp.append(seq)
+
+
+# %%
+# 5/2の作業 -----------------------------------------
+
+def sameNucl_pos(k, ref):
+    if k >= 0:
+        init = 'N' * k
+        tar = init + ref
+    elif k < 0:
+        cut = (-1) * k
+        tar = ref[cut:]
+
+    tmp = []
+    for i in range(len(ref)):
+        if len(tar) > i:
+            if ref[i] == tar[i]:
+                pos = i+1
+                tmp.append(pos)
+
+    if len(tmp) == 0:
+        tmp = -1
+
+    return tmp
+
+
+# %%
+# 1塩基のずれ ---------------
+ref = 'ACTCTTCTGGT'
+pos = sameNucl_pos(1, ref)
+print(pos)
+for i in pos:
+    print(ref[i-1])
+
+# %%
+ref = 'ACTCTTCTGGT'
+pos = sameNucl_pos(-1, ref)
+print(pos)
+for i in pos:
+    print(ref[i-1])
+
+# %%
+# 2塩基のずれ ---------------
+ref = 'ACTCTTCTGGT'
+pos = sameNucl_pos(2, ref)
+print(pos)
+for i in pos:
+    print(ref[i-1])
+
+# %%
+# 3塩基のずれ ---------------
+ref = 'ACTCTTCTGGT'
+pos = sameNucl_pos(3, ref)
+print(pos)
+for i in pos:
+    print(ref[i-1])
+
+# %%
+"""test
+# サンプルCで各塩基位置で出現頻度が最大値をとる塩基から構成されるDNA断片 -------------------
+pos_freq = pd.read_excel('/Users/tomoyauchiyama/code/CNN/test/PR2688_C_60nt.xlsx')
+maxnucl = pos_freq.idxmax(axis=1).tolist()
+maxfrag = ''.join(maxnucl)
+
+print(len(maxfrag))
+print(maxfrag)
+
+# 構築したDNA断片上で、5'UTR領域の開始位置を探索（一時的に推定)
+ref = 'ACTCTTCTGGT'
+five_utr = maxfrag.find(ref)
+print(five_utr)
+"""
+
+"""test
+df = pd.read_excel('/Users/tomoyauchiyama/code/CNN/test/PR2688_C_60nt.xlsx') * 10000
+cnt = df.to_numpy().astype(int)
+pwm_score = pwm(cnt, 10000)
+pwm_df = pd.DataFrame(pwm_score, columns=df.columns)
+print(pwm_df[49:])
+
+ref = 'ACTCTTCTGGT'
+length = len(ref)
+start = 49
+tar_pwm = pwm_df[start:start+length].reset_index(drop=True)
+print(sum([tar_pwm.loc[i, nucl] for i, nucl in enumerate(ref)]))
+"""
+
+
+# %%
+# 全サンプルにおける5'UTR領域の開始位置の一時的な決定
+import re
+import glob
+
+indir = '/Users/tomoyauchiyama/code/CNN/test'
+ref = 'ACTCTTCTGGT'
+five_utr = {}
+for xlsx in sorted(glob.glob(os.path.join(indir, '*.xlsx'))):
+    file_name = os.path.splitext(os.path.basename(xlsx))[0]
+    name = re.compile(r'.*_(.*)_60nt').search(file_name).group(1)
+    pos_freq = pd.read_excel(xlsx)
+    maxnucl = pos_freq.idxmax(axis=1).tolist()
+    maxfrag = ''.join(maxnucl)
+    pos = maxfrag.find(ref)
+    if pos != -1:
+        five_utr[name] = pos
+    else:
+        flist = [m.start() for m in re.finditer('ACT', maxfrag)]
+        if len(flist) == 0:
+            five_utr[name] = -1
+        else:
+            for i in flist:
+                if five_utr.get(name):
+                    five_utr[name] += ',' + str(i)
+                else:
+                    five_utr[name] = str(i)
+
+# %%
+# calc PWM score
+def pwm(cnt, total, bg=0.25):
+    p = (cnt + (np.sqrt(total) * 0.25)) / (total + (4 * (np.sqrt(total) * 0.25)))
+    pwm_score = np.log2(p/bg)
+
+    return pwm_score
+
+# %%
+def pwmScore(pwm_df, start, length, ref):
+    tar_pwm = pwm_df[start:start+length].reset_index(drop=True)
+    total = float(sum([tar_pwm.loc[i, nucl] for i, nucl in enumerate(ref)]))
+    return total
+
+# %%
+def pwm_pattern(k, start, ref, file, total):
+    pos_cnt = pd.read_excel(file) * total
+    cnt = pos_cnt.to_numpy().astype(int)
+    pwm_score = pwm(cnt, total)
+    pwm_df = pd.DataFrame(pwm_score, columns=df.columns)
+
+    score = {}
+    for i in range(k+1):
+        if i == 0:
+            s = start + i
+            length = len(ref)
+            score[s] = pwmScore(pwm_df, s, length, ref)
+        else:
+            s_m = start - i
+            length_m = len(ref)
+            score[s_m] = pwmScore(pwm_df, s_m, length_m, ref)
+            s_p = start + i
+            length_p = len(ref) - i
+            ref_p = ref[:length_p]
+            score[s_p] = pwmScore(pwm_df, s_p, length_p, ref_p)
+
+    return score
+
+# %%
+# {'C': 49, 'D': '50', 'E': '50', 'F': 49, 'G': 49, 'H': 49}
+ref = 'ACTCTTCTGGT'
+file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_C_60nt.xlsx'
+total = 21044437
+score = pwm_pattern(3, 49, ref, file, total)
+
+# %%
+file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_D_60nt.xlsx'
+total = 12028692
+score = pwm_pattern(3, 49, ref, file, total)
+
+# %%
+file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_E_60nt.xlsx'
+total = 15283034
+score = pwm_pattern(3, 49, ref, file, total)
+
+# %%
+file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_F_60nt.xlsx'
+total = 20323468
+score = pwm_pattern(3, 49, ref, file, total)
+
+# %%
+file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_G_60nt.xlsx'
+total = 19745701
+score = pwm_pattern(3, 49, ref, file, total)
+
+# %%
+file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_H_60nt.xlsx'
+total = 15582685
+score = pwm_pattern(3, 49, ref, file, total)
+
+# %%
+# +側で、ライブラリー構造のATGC比率の調査領域を+3以上伸ばす。
+print(sorted(score.items()))
+
+# %%
+fig=plt.figure()
+ax = fig.subplots()
+
+x = sorted(score.keys())
+y = [score[i] for i in x]
+ax.scatter(x, y, color='black')
+ax.plot(x, y, color='black', linestyle='--')
+
+ax.set_xlim(min(x), max(x))
+ax.set_ylim(min(y)-2, max(y)+2)
+ax.axvline(49, color='gray', linestyle='--')
+#ax.axhline((-1) * np.log10(0.05), color='gray', linestyle='--')
+
+ax.set_xlabel('5\'UTR start position from 5\'index')
+ax.set_ylabel('PWM score')
+
 plt.show()
 # %%
