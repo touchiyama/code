@@ -1,4 +1,5 @@
 # %%
+from cProfile import label
 import re
 import os
 import sys
@@ -1007,19 +1008,28 @@ print(five_utr)
 """
 
 """test
+# %%
 df = pd.read_excel('/Users/tomoyauchiyama/code/CNN/test/PR2688_C_60nt.xlsx') * 10000
 cnt = df.to_numpy().astype(int)
 pwm_score = pwm(cnt, 10000)
 pwm_df = pd.DataFrame(pwm_score, columns=df.columns)
 print(pwm_df[49:])
 
+# %%
 ref = 'ACTCTTCTGGT'
 length = len(ref)
 start = 49
 tar_pwm = pwm_df[start:start+length].reset_index(drop=True)
-print(sum([tar_pwm.loc[i, nucl] for i, nucl in enumerate(ref)]))
+tar_min = tar_pwm.min(axis=1)
+tar_max = tar_pwm.max(axis=1)
+score = sum([tar_pwm.loc[i, nucl] for i, nucl in enumerate(ref)])
+score_norm = (score - sum(tar_min)) / (sum(tar_max) - sum(tar_min))
+print(score)
+print(sum(tar_min))
+print(sum(tar_max))
+print(sum(tar_max) - sum(tar_min))
+print(score_norm)
 """
-
 
 # %%
 # 全サンプルにおける5'UTR領域の開始位置の一時的な決定
@@ -1058,10 +1068,31 @@ def pwm(cnt, total, bg=0.25):
     return pwm_score
 
 # %%
+# pwmスコアの算出 ----------------------------
 def pwmScore(pwm_df, start, length, ref):
     tar_pwm = pwm_df[start:start+length].reset_index(drop=True)
     total = float(sum([tar_pwm.loc[i, nucl] for i, nucl in enumerate(ref)]))
     return total
+
+"""
+スコアを出現頻度の対数によって定義した場合、スコアの和が配列の対数尤度に相当するため、
+確率モデルに基づく推定と見なすことができる。
+"""
+# %%
+# pwmスコアの正規化 ----------------------------
+def pwmScore_norm(pwm_df, start, length, ref):
+    tar_pwm = pwm_df[start:start+length].reset_index(drop=True)
+    tar_min = tar_pwm.min(axis=1)
+    tar_max = tar_pwm.max(axis=1)
+    score = float(sum([tar_pwm.loc[i, nucl] for i, nucl in enumerate(ref)]))
+    score_norm = (score - sum(tar_min)) / (sum(tar_max) - sum(tar_min))
+
+    return score_norm
+
+"""
+pwm scoreの正規化(0~1)を行うことで、解釈をしやすくなると思ったが、複雑となったので却下。
+pwm_norm(nuclFrag, i) = (pwm_score(nuclFrag) - min(i)) / (max(i) - min(i))
+"""
 
 # %%
 def pwm_pattern(k, start, ref, file, total):
@@ -1073,17 +1104,23 @@ def pwm_pattern(k, start, ref, file, total):
     score = {}
     for i in range(k+1):
         if i == 0:
-            s = start + i
-            length = len(ref)
+            s = start
+            #length = len(ref)
+            length = len(ref) - 1
+            ref = ref[:length]
             score[s] = pwmScore(pwm_df, s, length, ref)
+            #score[s] = pwmScore_norm(pwm_df, s, length, ref)
         else:
             s_m = start - i
             length_m = len(ref)
             score[s_m] = pwmScore(pwm_df, s_m, length_m, ref)
+            #score[s_m] = pwmScore_norm(pwm_df, s_m, length_m, ref)
             s_p = start + i
-            length_p = len(ref) - i
+            #length_p = len(ref) - i
+            length_p = len(ref) - (i+1)
             ref_p = ref[:length_p]
             score[s_p] = pwmScore(pwm_df, s_p, length_p, ref_p)
+            #score[s_p] = pwmScore_norm(pwm_df, s_p, length_p, ref_p)
 
     return score
 
@@ -1097,12 +1134,12 @@ score = pwm_pattern(3, 49, ref, file, total)
 # %%
 file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_D_60nt.xlsx'
 total = 12028692
-score = pwm_pattern(3, 49, ref, file, total)
+score = pwm_pattern(3, 50, ref, file, total)
 
 # %%
 file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_E_60nt.xlsx'
 total = 15283034
-score = pwm_pattern(3, 49, ref, file, total)
+score = pwm_pattern(3, 50, ref, file, total)
 
 # %%
 file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_F_60nt.xlsx'
@@ -1127,18 +1164,25 @@ print(sorted(score.items()))
 fig=plt.figure()
 ax = fig.subplots()
 
-x = sorted(score.keys())
-y = [score[i] for i in x]
+x = [i+1 for i in sorted(score.keys())]
+y = [score[i-1] for i in x]
 ax.scatter(x, y, color='black')
 ax.plot(x, y, color='black', linestyle='--')
 
 ax.set_xlim(min(x), max(x))
 ax.set_ylim(min(y)-2, max(y)+2)
-ax.axvline(49, color='gray', linestyle='--')
+ax.axhline(0, color='gray', linestyle='--')
+ax.axvline(50+1, color='red', linestyle='--', label='Predicted 5\'UTR start site')
 #ax.axhline((-1) * np.log10(0.05), color='gray', linestyle='--')
-
+ax.legend(
+    bbox_to_anchor=(1.05, 1),
+    loc='upper left',
+    borderaxespad=0,
+    fontsize=10
+)
 ax.set_xlabel('5\'UTR start position from 5\'index')
-ax.set_ylabel('PWM score')
+ax.set_ylabel('Score')
 
 plt.show()
+
 # %%
