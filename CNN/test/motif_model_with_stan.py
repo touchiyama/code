@@ -877,26 +877,49 @@ plt.show()
 
 # %%
 file = '/Users/tomoyauchiyama/code/CNN/test/TFBS_len.txt'
-df = pd.read_csv(file)
+cnt = {}
+with open(file, 'r') as rf:
+    for line in rf.readlines():
+        line = line.rstrip('\n')
+        if line == 'V1':
+            pass
+        else:
+            id = int(line)
+            if cnt.get(id):
+                cnt[id] += 1
+            else:
+                cnt[id] = 1
 
 # %%
+df = pd.read_csv(file)
 df.describe()['V1']['min']
 
 # %%
-df.min()
+df.mean()
 
 # %%
 fig=plt.figure()
 ax=fig.add_subplot(111)
 
-plt.hist(df, bins=20, rwidth=0.8, color='red', alpha=0.5, range=(0, 40))
+#plt.hist(df, bins=20, rwidth=0.8, color='red', alpha=0.5, range=(0, 40), align='left')
+x = sorted(cnt.keys())
+y = [cnt[i] for i in x]
+plt.bar(x, y, align='center', color='orange')
 ax.set_title('Distribution of nr TFBS length (JASPAR_vertebrates)')
-ax.set_xlabel('Length')
+ax.set_xlabel('Length(nt)')
 ax.set_ylabel('Count')
-plt.vlines(df.min(), 0, 300, colors='red', linestyle='-.', linewidth=2)
-plt.vlines(df.mean(), 0, 300, colors='gray', linestyle='--', linewidth=3)
-#plt.axvline(df.mean(), color='gray', linestyle='--')
+#plt.vlines(min(), 0, 300, colors='red', linestyle='-.', linewidth=2)
+plt.vlines(df.mean(), 0, 300, colors='gray', linestyle='--', linewidth=2, label='mean_len=12.48 nt')
+ax.set_xlim(0, max(x)+5)
+ax.set_ylim(0, max(y)+20)
+ax.legend(
+    #bbox_to_anchor=(1.05, 1),
+    loc='upper right',
+    #borderaxespad=0,
+    fontsize=10
+)
 plt.show()
+
 # %%
 
 def k_mer(k, nucl):
@@ -1182,6 +1205,149 @@ ax.legend(
 )
 ax.set_xlabel('5\'UTR start position from 5\'index')
 ax.set_ylabel('Score')
+
+plt.show()
+
+# %%
+# 5/6の作業 -----------------------------------------
+# randomにk-merをつくる -------
+import itertools
+
+bases = ['A', 'T', 'G', 'C']
+
+# %%
+k = 4
+kmer_list = [''.join(p) for p in itertools.product(bases, repeat=k)]
+print(len(kmer_list))
+print(kmer_list)
+
+# %%
+# randomに作成された16塩基長の配列を100000個作る ------
+# 正規分布に従うのか？
+import random
+
+def random_dna_sequence(length):
+    return ''.join(random.choice('ACTG') for _ in range(length))
+
+# %%
+outfile = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/random_seq.fa'
+N = 10000000
+with open(outfile, 'w') as wf:
+    for i in range(N):
+        id = '>seq_' + str(i+1)
+        seq = random_dna_sequence(16)
+        wf.write(f'{id}\n')
+        wf.write(f'{seq}\n')
+
+# %%
+# 作成した16塩基長の配列がランダム組成になっているかを確認 --------------
+target_seq = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/random_seq.fa'
+nucl = pd.DataFrame()
+flag = 0
+with open(target_seq, 'rt') as fq:
+    for line in fq.readlines():
+        line = line.rstrip('\n')
+        if re.compile(r'^>').search(line):
+                flag = 1
+        else:
+            if flag == 1:
+                insert = pd.Series([str(i) for i in line])
+                nucl = nucl.append(insert, ignore_index=True)
+                flag = 0
+
+# %%
+col = [str(i) for i in range(1, nucl.columns.size + 1)]
+nucl.columns = col
+
+# %%
+# 事前確率　--------------------------------------------------------
+total = nucl.index.size
+pos_freq = pd.DataFrame()
+for pos in col:
+    col_list = list(nucl[pos])
+    A = col_list.count('A') / total
+    T = col_list.count('T') / total
+    G = col_list.count('G') / total
+    C = col_list.count('C') / total
+    #N = col_list.count('N') / total
+    freq = pd.Series([A, T, G, C])
+    pos_freq = pos_freq.append(freq, ignore_index=True)
+
+# %%
+pos_freq.columns = ['A', 'T', 'G', 'C']
+pos_freq.index += 1
+print(pos_freq)
+
+# %%
+# logomekerでシーケンスロゴを作成-------------------------------------
+color_scheme = {
+    'T' : [0, 0.5, 0], # green
+    'A' : [1, 0, 0], # red
+    'G' : [1, 0.65, 0], # yellow
+    'C' :[0, 0, 1], # blue
+    'N': 'gray'
+}
+logo = lm.Logo(
+    pos_freq,
+    baseline_width=0.1,
+    vpad=0.08,
+    fade_probabilities=False,
+    stack_order='small_on_top',
+    color_scheme=color_scheme
+    #font_name='Luxi Mono',
+    #color_scheme='class',
+    #font_name='Rosewood Std',
+    #figsize=(30, 2.5)
+)
+
+logo.style_spines(spines=['left', 'right'], visible=False)
+
+# style using Axes methods
+logo.ax.set_xticks(np.arange(1, len(pos_freq)+1, step=2))
+logo.ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
+logo.ax.set_xlabel('Position')
+logo.ax.set_ylabel('Probability')
+plt.show()
+
+# %%
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_5.txt'
+hist_df = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_6.txt'
+hist_df2 = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_7.txt'
+hist_df3 = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_8.txt'
+hist_df4 = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_9.txt'
+hist_df5 = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_10.txt'
+hist_df6 = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_11.txt'
+hist_df7 = pd.read_csv(hist_file, delimiter=' ', header=None)
+
+# %%
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+plt.scatter(hist_df[0], hist_df[1], label='k=5')
+#plt.bar(hist_df2[0], hist_df2[1], log=True, align='center', width=1.0, label='k=6')
+plt.scatter(hist_df2[0], hist_df2[1], label='k=6')
+plt.bar(hist_df3[0], hist_df3[1], alpha=0.5, log=True, align='center', width=1.0, label='k=7')
+plt.bar(hist_df4[0], hist_df4[1], alpha=0.5, log=True, align='center', width=1.0, label='k=8')
+plt.bar(hist_df5[0], hist_df5[1], alpha=0.5, log=True, align='center', width=1.0, label='k=9')
+plt.bar(hist_df6[0], hist_df6[1], alpha=0.5, log=True, align='center', width=1.0, label='k=10')
+plt.bar(hist_df7[0], hist_df7[1], alpha=0.5, log=True, align='center', width=1.0, label='k=11')
+ax.set_xlim(-500, 14000)
+plt.xlabel('# of occurance at k-mer')
+plt.ylabel('# of unique k-mers')
+ax.legend(
+    #bbox_to_anchor=(1.05, 1),
+    loc='upper right',
+    #borderaxespad=0,
+    fontsize=8
+)
+#plt.ylim(0, higher_frequency)
 
 plt.show()
 
