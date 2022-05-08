@@ -745,12 +745,16 @@ import scipy.stats as st
 x1_total = 12762
 x2_total = 11291
 
-x1 = 1 + 2 * np.random.randn(500)
+x1 = 2 + 2 * np.random.randn(500).astype(int)
 x1 = np.abs(x1)
-x2 = 5 + 2 * np.random.randn(500)
+x2 = 5 + 2 * np.random.randn(500).astype(int)
 x2 = np.abs(x2)
 
+print(x1)
+print(x2)
+
 # %%
+# フィッシャー正確確率検定 ---------------------------
 pval = []
 for i in range(len(x1)):
     """
@@ -769,6 +773,26 @@ for i in range(len(x1)):
     pval.append(p[1])
 
 # %%
+# カイ2乗分布による比率の差の検定(イェーツの補正あり) ---
+# フィッシャーの正確確率検定では、
+# サンプルサイズが増加するとp値の算出に時間がかかる
+pval = []
+for i in range(len(x1)):
+    if (x1[i] == 0) | (x2[i] == 0):
+        pval.append(1)
+    else:
+        x1u = x1_total - x1[i]
+        x2u = x2_total - x2[i]
+        _, p, _, _ = st.chi2_contingency(
+            np.array([[x1[i], x2[i]], [x1u, x2u]]),
+            correction=True
+        )
+        pval.append(p)
+
+# %%
+print(pval)
+
+# %%
 fdr = multi.multipletests(
     pval,
     alpha=0.05,
@@ -777,6 +801,10 @@ fdr = multi.multipletests(
 x1x2_fdr = fdr[1]
 
 # %%
+print(x1x2_fdr)
+
+# %%
+"""test
 p = proportions_ztest(
     [1, 4],
     [23777220, 20266770],
@@ -788,11 +816,20 @@ print(p[1])
 p = st.fisher_exact(
     [[1, 4], [23777220-1, 20266770-4]]
 )
-p[1]
+print(p)
+print(p[1])
 
 # %%
-x1_de = x1_total - x1.astype(int)
-x2_de = x2_total - x2.astype(int)
+x2, pval, dof, e = st.chi2_contingency(
+    [[1, 4], [23777220-1, 20266770-4]],
+    correction=True
+)
+print(x2, pval, dof, e)
+"""
+
+# %%
+x1_de = x1_total - x1
+x2_de = x2_total - x2
 x1_ratio = x1 / x1_de
 x2_ratio = x2 / x2_de
 x1x2_odds = x1_ratio / x2_ratio
@@ -1231,7 +1268,8 @@ def random_dna_sequence(length):
 
 # %%
 outfile = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/random_seq.fa'
-N = 10000000
+#N = 10000000
+N = 100000
 with open(outfile, 'w') as wf:
     for i in range(N):
         id = '>seq_' + str(i+1)
@@ -1348,7 +1386,167 @@ ax.legend(
     fontsize=8
 )
 #plt.ylim(0, higher_frequency)
-
 plt.show()
+
+# %%
+# 16塩基内に局在するk-mer配列の開始位置の同定 -------------------------
+km_file = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/k6.txt'
+kmer_df = pd.read_csv(km_file, delimiter=' ', header=None)
+kmer_list = kmer_df[0]
+
+outfile = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/k6.fa'
+with open(outfile, 'w') as wf:
+    for i in range(len(kmer_list)):
+        id = '>seq_' + str(i+1)
+        seq = kmer_list[i]
+        wf.write(f'{id}\n')
+        wf.write(f'{seq}\n')
+
+
+# %%
+def kmer_start(kmer, dna):
+    tmp = []
+    for m in re.finditer(kmer, dna):
+        start = str(m.start() + 1)
+        tmp.append(start)
+
+    return ','.join(tmp)
+
+# %%
+fa_file = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/random_seq.fa'
+kmer_pos = {}
+for kmer in kmer_list:
+    with open(fa_file, 'r') as rf:
+        for line in rf.readlines():
+            line = line.rstrip('\n')
+            if re.compile(r'^>').search(line):
+                pass
+            else:
+                if kmer in line:
+                    pos = kmer_start(kmer, line)
+                    if kmer_pos.get(kmer):
+                        kmer_pos[kmer] += ',' + pos
+                    else:
+                        kmer_pos[kmer] = pos
+
+# %%
+print(len(kmer_pos))
+print(kmer_pos)
+
+# %%
+# 上記のスクリプトで実行すると、17分かかるのでseqkitで実行することにした。
+# usage: https://bioinf.shenwei.me/seqkit/usage/#locate
+# conda install -c bioconda seqkit
+# jellyfish dump mer_counts.jf -c > k6.txt
+# 16塩基内に局在するk-mer配列の開始位置の同定 -------------------------
+"""
+km_file = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/k6.txt'
+kmer_df = pd.read_csv(km_file, delimiter=' ', header=None)
+kmer_list = kmer_df[0]
+
+outfile = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/k6.fa'
+with open(outfile, 'w') as wf:
+    for i in range(len(kmer_list)):
+        id = '>seq_' + str(i+1)
+        seq = kmer_list[i]
+        wf.write(f'{id}\n')
+        wf.write(f'{seq}\n')
+"""
+# time cat random_seq.fa | seqkit locate -P -f k6.fa -j 30 > k6_pos.txt
+# user 16m59.860s (default thread:4) - 自作のスクリプト実行と変わらないが、thread数をあげると実行速度が上がるだろう
+# jellyfishによるcount結果とseqkitによるヒット数の結果は一致している
+# %%
+# seqkit locate 出力ファイルの処理 ------------------------------------
+infile = '/Users/tomoyauchiyama/code/CNN/test/jellyfish/k6_pos.txt'
+"""
+seqID   patternName     pattern strand  start   end     matched
+seq_1   seq_451 ACTAAG  +       5       10      ACTAAG
+"""
+kmerCnt = {}
+with open(infile, 'r') as rf:
+    for line in rf.readlines():
+        line = line.rstrip('\n')
+        if 'seqID' in line:
+            pass
+        else:
+            tmp = line.split()
+            id = tmp[2] + ',' + str(tmp[4])
+            if kmerCnt.get(id):
+                kmerCnt[id] += 1
+            else:
+                kmerCnt[id] = 1
+            """
+            if kmerStart.get(kmer):
+                kmerStart[kmer] += ',' + pos
+            else:
+                kmerStart[kmer] = pos
+            """
+
+# %%
+"""test
+print(kmerCnt['AAAAGG,2'])
+
+pos= ['AAAAA,19', 'AAAAA,1', 'AAAAA,10', 'AAAAA,5', 'AAAAA,8']
+print(sorted(pos, key=lambda x: int(re.search(r'.*,(\d+)', x).group(1))))
+"""
+
+# %%
+# グラフによる可視化の準備 ------------------------------
+y = {}
+x = {}
+for id in sorted(kmerCnt.keys(), key=lambda x: int(re.search(r'.*,(\d+)', x).group(1))):
+    kmer, xval = id.split(',')
+    if y.get(kmer):
+        y[kmer] += ',' + str(kmerCnt[id])
+        x[kmer] += ',' + str(xval)
+    else:
+        y[kmer] = str(kmerCnt[id])
+        x[kmer] = str(xval)
+
+kmer_df = pd.DataFrame()
+for kmer in sorted(y.keys()):
+    df1 = pd.Series([kmer, [int(i) for i in x[kmer].split(',')]])
+    df2 = pd.Series([[int(i) for i in y[kmer].split(',')]])
+    col = pd.concat([df1, df2])
+    kmer_df = kmer_df.append(col, ignore_index=True)
+
+kmer_df.columns = ['kmer', 'pos', 'count']
+
+# %%
+"""test
+kmer_df
+kmer_df[kmer_df['kmer'] == 'AAAAGG']
+"""
+# %%
+# あるk-mer配列におけるターゲット配列上の出現位置とその回数 ------
+# 例として、最も出現回数が多かったAAAAGGの場合を示す
+
+seq = 'TGCGCC'
+
+fig=plt.figure()
+ax=fig.add_subplot(111)
+
+idx = kmer_df.index[kmer_df['kmer'] == seq][0]
+x_val = kmer_df.loc[idx, 'pos']
+y_val = kmer_df.loc[idx, 'count']
+plt.bar(x_val, y_val, align='center', color='orange')
+ax.set_title(f'{seq}')
+ax.set_xlabel('Position')
+ax.set_ylabel('Count')
+#plt.vlines(min(), 0, 300, colors='red', linestyle='-.', linewidth=2)
+#plt.vlines(df.mean(), 0, 300, colors='gray', linestyle='--', linewidth=2, label='mean_len=12.48 nt')
+ax.set_xlim(0, max(x_val)+1)
+ax.set_ylim(0, max(y_val)+10)
+"""
+ax.legend(
+    #bbox_to_anchor=(1.05, 1),
+    loc='upper right',
+    #borderaxespad=0,
+    fontsize=10
+)
+"""
+plt.xticks(x_val)
+plt.show()
+# random性が確認できた
 
 # %%
