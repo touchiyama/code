@@ -1,5 +1,5 @@
 # %%
-from cProfile import label
+from operator import index
 import re
 import os
 import sys
@@ -13,7 +13,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 # %%
-target_seq = '/Users/tomoyauchiyama/code/Consensus_frequency/12B2106/insert.fa'
+target_seq = '/Users/tomoyauchiyama/code/CNN/test/enrich.fa'
 nucl = pd.DataFrame()
 
 with open(target_seq, 'rt') as fq:
@@ -83,7 +83,7 @@ logo = lm.Logo(
 logo.style_spines(spines=['left', 'right'], visible=False)
 
 # style using Axes methods
-logo.ax.set_xticks(np.arange(1, len(pos_freq)+1, step=2))
+logo.ax.set_xticks(np.arange(1, len(pos_freq)+1, step=1))
 logo.ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
 logo.ax.set_xlabel('Position')
 logo.ax.set_ylabel('Probability')
@@ -1131,8 +1131,9 @@ def pwm(cnt, total, bg=0.25):
 # pwmスコアの算出 ----------------------------
 def pwmScore(pwm_df, start, length, ref):
     tar_pwm = pwm_df[start:start+length].reset_index(drop=True)
+    ele = [nucl + '#' + str(tar_pwm.loc[i, nucl]) for i, nucl in enumerate(ref)]
     total = float(sum([tar_pwm.loc[i, nucl] for i, nucl in enumerate(ref)]))
-    return total
+    return ele, total
 
 """
 スコアを出現頻度の対数によって定義した場合、スコアの和が配列の対数尤度に相当するため、
@@ -1183,6 +1184,22 @@ def pwm_pattern(k, start, ref, file, total):
             #score[s_p] = pwmScore_norm(pwm_df, s_p, length_p, ref_p)
 
     return score
+
+# %%
+ref = 'ACTCTTCTGG'
+start = 50
+length = len(ref)
+total = 21044437
+file = '/Users/tomoyauchiyama/code/CNN/test/PR2688_C_60nt.xlsx'
+pos_cnt = pd.read_excel(file) * total
+cnt = pos_cnt.to_numpy().astype(int)
+pwm_score = pwm(cnt, total)
+pwm_df = pd.DataFrame(pwm_score, columns=pos_cnt.columns)
+ele,  score = pwmScore(pwm_df, start, length, ref)
+
+# %%
+print(ele)
+print(score)
 
 # %%
 # {'C': 49, 'D': '50', 'E': '50', 'F': 49, 'G': 49, 'H': 49}
@@ -1348,35 +1365,47 @@ logo.ax.set_ylabel('Probability')
 plt.show()
 
 # %%
-hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_5.txt'
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/B/histogram_12.txt'
 hist_df = pd.read_csv(hist_file, delimiter=' ', header=None)
-hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_6.txt'
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H/histo_12_random.txt'
 hist_df2 = pd.read_csv(hist_file, delimiter=' ', header=None)
-hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_7.txt'
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H/histo_12.txt'
 hist_df3 = pd.read_csv(hist_file, delimiter=' ', header=None)
-hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_8.txt'
+
+# %%
+"""
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H_hist/histo_7.txt'
+hist_df3 = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H_hist/histo_8.txt'
 hist_df4 = pd.read_csv(hist_file, delimiter=' ', header=None)
-hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_9.txt'
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H_hist/histo_9.txt'
 hist_df5 = pd.read_csv(hist_file, delimiter=' ', header=None)
-hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_10.txt'
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H_hist/histo_10.txt'
 hist_df6 = pd.read_csv(hist_file, delimiter=' ', header=None)
-hist_file = '/Users/tomoyauchiyama/code/CNN/test/histo_11.txt'
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H_hist/histo_11.txt'
 hist_df7 = pd.read_csv(hist_file, delimiter=' ', header=None)
+hist_file = '/Users/tomoyauchiyama/code/CNN/test/H_hist/histo_12.txt'
+hist_df8 = pd.read_csv(hist_file, delimiter=' ', header=None)
+"""
 
 # %%
 
 fig=plt.figure()
 ax=fig.add_subplot(111)
 
-plt.scatter(hist_df[0], hist_df[1], label='k=5')
-#plt.bar(hist_df2[0], hist_df2[1], log=True, align='center', width=1.0, label='k=6')
-plt.scatter(hist_df2[0], hist_df2[1], label='k=6')
-plt.bar(hist_df3[0], hist_df3[1], alpha=0.5, log=True, align='center', width=1.0, label='k=7')
-plt.bar(hist_df4[0], hist_df4[1], alpha=0.5, log=True, align='center', width=1.0, label='k=8')
-plt.bar(hist_df5[0], hist_df5[1], alpha=0.5, log=True, align='center', width=1.0, label='k=9')
-plt.bar(hist_df6[0], hist_df6[1], alpha=0.5, log=True, align='center', width=1.0, label='k=10')
-plt.bar(hist_df7[0], hist_df7[1], alpha=0.5, log=True, align='center', width=1.0, label='k=11')
-ax.set_xlim(-500, 14000)
+plt.bar(hist_df[0], hist_df[1], align='center', width=1.0, label='k=12(B)')
+#plt.scatter(hist_df[0], hist_df[1], label='k=5')
+#plt.bar(hist_df2[0], hist_df2[1], align='center', width=1.0, label='k=12(random)')
+#plt.scatter(hist_df2[0], hist_df2[1], label='k=6')
+plt.bar(hist_df3[0], hist_df3[1], alpha=0.5, align='center', width=1.0, label='k=12(H)')
+
+#plt.bar(hist_df4[0], hist_df4[1], alpha=0.5, align='center', width=1.0, label='k=8')
+#plt.bar(hist_df5[0], hist_df5[1], alpha=0.5, align='center', width=1.0, label='k=9')
+#plt.bar(hist_df6[0], hist_df6[1], alpha=0.5, align='center', width=1.0, label='k=10')
+#plt.bar(hist_df7[0], hist_df7[1], alpha=0.5, align='center', width=1.0, label='k=11')
+#plt.bar(hist_df8[0], hist_df8[1], alpha=0.5, align='center', width=1.0, label='k=12')
+
+#ax.set_xlim(-500, 14000)
 plt.xlabel('# of occurance at k-mer')
 plt.ylabel('# of unique k-mers')
 ax.legend(
@@ -1548,5 +1577,570 @@ ax.legend(
 plt.xticks(x_val)
 plt.show()
 # random性が確認できた
+
+# %%
+# 目的配列の切り出し
+df = pd.read_excel('/Users/tomoyauchiyama/code/CNN/test/BG_k10_top100.xlsx')
+df['Seq'].head(3)
+
+# %%
+nucl = pd.DataFrame()
+for seq in df['Seq']:
+    insert = pd.Series([str(i) for i in seq])
+    nucl = nucl.append(insert, ignore_index=True)
+
+col = [str(i) for i in range(1, nucl.columns.size + 1)]
+nucl.columns = col
+
+total = nucl.index.size
+pos_freq = pd.DataFrame()
+for pos in col:
+    col_list = list(nucl[pos])
+    A = col_list.count('A') / total
+    T = col_list.count('T') / total
+    G = col_list.count('G') / total
+    C = col_list.count('C') / total
+    #N = col_list.count('N') / total
+    freq = pd.Series([A, T, G, C])
+    pos_freq = pos_freq.append(freq, ignore_index=True)
+
+pos_freq.columns = ['A', 'T', 'G', 'C']
+pos_freq.index += 1
+print(pos_freq)
+
+# %%
+color_scheme = {
+    'T' : [0, 0.5, 0], # green
+    'A' : [1, 0, 0], # red
+    'G' : [1, 0.65, 0], # yellow
+    'C' :[0, 0, 1], # blue
+    'N': 'gray'
+}
+logo = lm.Logo(
+    pos_freq,
+    baseline_width=0.1,
+    vpad=0.08,
+    fade_probabilities=False,
+    stack_order='small_on_top',
+    color_scheme=color_scheme
+    #font_name='Luxi Mono',
+    #color_scheme='class',
+    #font_name='Rosewood Std',
+    #figsize=(30, 2.5)
+)
+
+logo.style_spines(spines=['left', 'right'], visible=False)
+
+# style using Axes methods
+logo.ax.set_xticks(np.arange(1, len(pos_freq)+1, step=1))
+logo.ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
+logo.ax.set_xlabel('Position')
+logo.ax.set_ylabel('Frequency')
+plt.show()
+
+
+# %%
+# 8/29 -------------------------------------
+# ToDo: p値の補正をbofferoniであることを確認すること
+
+import os
+import re
+import sys
+import pandas as pd
+import numpy as np
+import scipy.stats as st
+import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# %%
+# read data ---
+infile = '/Users/tomoyauchiyama/code/PG4699_target_ratio.txt'
+mesh2D = pd.read_csv(infile, sep='\t')
+# %%
+mesh2D.head(5)
+
+# %%
+# rep1 freq data ---
+rep1_a = mesh2D.loc[:, 'PG4699_01_a_Freq':'PG4699_20_a_Freq']
+rep1_b = mesh2D.loc[:, 'PG4699_43_a_Freq']
+rep1_freq = pd.concat([rep1_a, rep1_b], axis=1)
+rep1_freq.head(5)
+# %%
+rep1_freq.shape
+# %%
+# paired data ---
+# paired-sample(controlのカウント値は1以上)
+rep1_freq_m = rep1_freq[rep1_freq['PG4699_43_a_Freq'] != 0]
+rep1_freq_m.head(5)
+
+# %%
+# rep2 freq data ---
+rep2_a = mesh2D.loc[:, 'PG4699_21_a_Freq':'PG4699_42_a_Freq']
+rep2_b = mesh2D.loc[:, 'PG4699_44_a_Freq']
+rep2_freq = pd.concat([rep2_a, rep2_b], axis=1)
+rep2_freq.head(5)
+# %%
+rep2_freq.shape
+# %%
+# paired data ---
+# paired-sample(controlのカウント値は1以上)
+rep2_freq_m = rep2_freq[rep2_freq['PG4699_44_a_Freq'] != 0]
+rep2_freq_m.head(5)
+# %%
+rep2_freq_m.shape
+
+# %%
+# rep1 and rep2 FC ---
+FC_col_1 = []
+FC_col_2 = []
+for cols in mesh2D.columns:
+    if '43_a_FC' in cols:
+        FC_col_1.append(cols)
+    elif '44_a_FC' in cols:
+        FC_col_2.append(cols)
+# %%
+rep1 = pd.DataFrame()
+for cols in FC_col_1:
+    name = re.compile(r'(.*)_43_a_FC').search(cols).group(1)
+    ID = name + '_a'
+    rep1[ID] = mesh2D.loc[rep1_freq_m.index.tolist(), cols]
+# %%
+rep1.shape
+# %%
+rep2 = pd.DataFrame()
+for cols in FC_col_2:
+    name = re.compile(r'(.*)_44_a_FC').search(cols).group(1)
+    ID = name + '_a'
+    rep2[ID] = mesh2D.loc[rep2_freq_m.index.tolist(), cols]
+# %%
+rep2.shape
+
+# %%
+# zscore ---
+# サンプル間で比較するため、サンプル間でスケールを合わせる
+z_rep1 = st.zscore(rep1, axis=1)
+z_rep2 = st.zscore(rep2, axis=1)
+
+# %%
+# 比較対象とはならない欠損値がある行、配列は調査外とする
+z_rep1_m = z_rep1.dropna()
+z_rep2_m = z_rep2.dropna()
+
+# %%
+# make heatmap ---
+y = z_rep1_m.index.values
+x = z_rep1_m.columns.values
+
+fig = go.Figure(
+    data=go.Heatmap(
+        colorbar=dict(
+            title='z-score'
+        ),
+        z=z_rep1_m,
+        x=x,
+        y=y,
+        colorscale='Viridis'
+    )
+)
+
+fig.update_xaxes(title='Sample(normalized)')
+fig.update_yaxes(title='Seq_ID')
+
+fig.update_layout(
+    title='heatmap',
+    xaxis_nticks=36)
+
+fig.show()
+htmlfile = os.path.join(
+    os.path.abspath('.'),
+    'PG4699_rep1_heatmap.html'
+)
+fig.write_html(htmlfile)
+
+# %%
+# make heatmap ---
+y = z_rep2_m.index.values
+x = z_rep2_m.columns.values
+
+fig = go.Figure(
+    data=go.Heatmap(
+        colorbar=dict(
+            title='z-score'
+        ),
+        z=z_rep2_m,
+        x=x,
+        y=y,
+        colorscale='Viridis'
+    )
+)
+
+fig.update_xaxes(title='Sample(normalized)')
+fig.update_yaxes(title='Seq_ID')
+
+fig.update_layout(
+    title='heatmap',
+    xaxis_nticks=36)
+
+fig.show()
+htmlfile = os.path.join(
+    os.path.abspath('.'),
+    'PG4699_rep2_heatmap.html'
+)
+fig.write_html(htmlfile)
+
+# %%
+# サンプル間のz-scoreを用いて、サンプル間の類似度を確認(クラスタリング)
+import scipy.spatial.distance as distance
+from scipy.cluster.hierarchy import dendrogram, ward
+
+#ward法で分類
+linkage_array = ward(z_rep1_m.T)
+
+ax = plt.figure(figsize=(20,10)).gca()
+dendrogram(linkage_array)
+bounds = ax.get_xbound()
+
+plt.xlabel("sample index",fontsize=10)
+plt.ylabel("Cluster distance",fontsize=10)
+
+# %%
+# サンプルの散布図 ---
+def scatter_with_dist(df, x_label, y_label, outfile):
+    #file = r'C:\Users\T22178\Desktop\test/BG_k9.xlsx'
+    #df = pd.read_excel(file)
+
+    #file = r'C:\Users\T22178\Desktop\test/BG_k9_top100.xlsx'
+    #df_top = pd.read_excel(file)
+    #top100_xy = df[df['Seq'].isin(df_top['Seq'].to_list())]
+
+    left, width = 0.1, 0.65 #散布図の左余白と、幅を定義
+    bottom, height = 0.1, 0.65 #散布図の下余白と、高さを定義
+    spacing = 0.05 #散布図とヒストグラムの間隔
+    fig_scatter = [left, bottom, width, height] #散布図の定義
+    fig_histx = [left, bottom + height + spacing, width, 0.2] #上のヒストグラムの定義
+    fig_histy = [left + width + spacing, bottom, 0.2, height] #右のヒストグラムの定義
+
+    fig = plt.figure(figsize=(8, 8)) #描写領域を正方形で生成
+
+    ax = fig.add_axes(fig_scatter) #図1として散布図領域を生成
+    ax_histx = fig.add_axes(fig_histx, sharex=ax) #上のヒストグラム領域を生成
+    ax_histy = fig.add_axes(fig_histy, sharey=ax) #右のヒストグラム領域を生成
+    ax_histx.tick_params(axis="x", labelbottom=False) #x軸ラベル無し
+    ax_histy.tick_params(axis="y", labelleft=False) #y軸ラベル無し
+
+    x = df[x_label].to_numpy()
+    y = df[y_label].to_numpy()
+    xymax = max(np.max(x), np.max(y)) + 0.01 #xとyの最大値を定義
+    binwidth = 0.005 #binの値幅を定義。
+    bins = np.arange(0, xymax, binwidth) #binの個数を定義
+
+    ax.set_xlim([0, xymax])
+    ax.set_ylim([0, xymax])
+    ax.scatter(x, y, color='gray', s=2.0)
+    #ax.scatter(top100_xy[x_label], top100_xy[y_label], color='red', s=2.0, label='top100')
+    ax.plot([0, xymax], [0, xymax], color='darkturquoise', linestyle='--', label='FC=1')
+    ax.plot(bins, 1.5*bins, color='dodgerblue', linestyle='--', label='FC=1.5')
+    ax.plot(bins, 2.0*bins, color='blue', linestyle='--', label='FC=2')
+
+    #r = df.loc[:, x_label:y_label].corr(method='pearson').iloc[0, 1]
+    #lm = LinearRegression().fit(x.reshape(-1, 1), y)
+    #ax.plot(x, lm.predict(x.reshape(-1, 1)), color='purple', linestyle='--', label='r='+str(round(r, 2)))
+
+    ax_histx.hist(x, bins=bins, color='gray') #xについてのヒストグラム作成
+    ax_histy.hist(y, bins=bins, orientation='horizontal', color='gray') #yについてのヒストグラム作成
+
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+
+    ax.legend(
+        bbox_to_anchor=(1.3, 1.4),
+        loc='upper right',
+        #borderaxespad=0,
+        fontsize=8
+    )
+
+    plt.tick_params(labelsize=8)
+    plt.show()
+    plt.savefig(outfile)
+
+# %%
+#paired-sample(controlのカウント値は1以上)
+outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4699'
+df = rep1_freq_m
+for cols in df.columns.values:
+    x_label = 'PG4699_43_a_Freq'
+    if cols != x_label:
+        y_label = cols
+        name1 = re.compile(r'(.*)_a').search(y_label).group(1)
+        name2 = re.compile(r'PG.*_(.*_a)_Freq').search(x_label).group(1)
+        name = name1 + '_' + name2 + '_scatter.png'
+        outfile = os.path.join(outdir, name)
+        scatter_with_dist(df, x_label, y_label, outfile)
+
+# %%
+#paired-sample(controlのカウント値は1以上)
+df = rep2_freq_m
+for cols in df.columns.values:
+    x_label = 'PG4699_44_a_Freq'
+    if cols != x_label:
+        y_label = cols
+        name1 = re.compile(r'(.*)_a').search(y_label).group(1)
+        name2 = re.compile(r'PG.*_(.*_a)_Freq').search(x_label).group(1)
+        name = name1 + '_' + name2 + '_scatter.png'
+        outfile = os.path.join(outdir, name)
+        scatter_with_dist(df, x_label, y_label, outfile)
+
+
+# %%
+# 3D plot ----
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    af100_agg,
+    x='frag_total',
+    y='adapter',
+    z='d_Depth',
+    color='agg',
+    symbol='agg',
+    range_x=(0, 250),
+    range_y=(0, 250),
+    range_z=(0, 250)
+)
+fig.update_traces(marker_coloraxis=None)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor='auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=3.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+"""
+px0 = np.linspace(0, af100_agg['frag_total'].max(), 100)
+px1 = np.linspace(0, af100_agg['adapter'].max(), 100)
+px0, px1 = np.meshgrid(px0, px1)
+z = -(px0 * coef[0] + px1 * coef[1] + intercept) / coef[2]
+fig.add_traces(
+    go.Surface(
+        x=px0,
+        y=px1,
+        z=z,
+        colorscale='Viridis',
+        colorbar=dict(title='d_depth')
+    )
+)
+"""
+fig.update_layout(
+    title='display 3D Surface Plots (AgglomerativeClustering)',
+    xaxis_nticks=36
+)
+
+
+# %%
+rep1_fcfdr = mesh2D.loc[
+    rep1_freq_m.index.tolist(),
+    'PG4699_01_43_a_FC':'PG4699_20_43_a_FDR'
+].reset_index(drop=True)
+rep1_fcfdr['SeqID'] = pd.Series([f'Seq_'+ str(i) for i in rep1_freq_m.index.tolist()])
+log10FDR = (-1) * np.log10(rep1_fcfdr['PG4699_01_43_a_FDR'].replace(0, 1e-300))
+data = pd.concat([rep1_fcfdr['SeqID'], rep1_fcfdr['PG4699_01_43_a_FC'], log10FDR], axis=1)
+
+
+# %%
+# ToDo: p値の補正をbofferoniであることを確認すること
+
+outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4699'
+
+mesh_size = 1.5
+#xrange = np.arange(0, mesh2D.index.size, mesh_size)
+#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
+
+fig = px.scatter_3d(
+    data,
+    y='SeqID',
+    x='PG4699_01_43_a_FDR',
+    z='PG4699_01_43_a_FC'
+    #color='batch'
+)
+fig.update_layout(
+    showlegend=True,
+    legend=dict(
+        x=-0.1,
+        xanchor='left',
+        y=1,
+        yanchor = 'auto'
+    )
+)
+fig.update_traces(
+    marker=dict(
+        size=1.0,
+        line=dict(width=1.0, color='DarkSlateGrey')
+        #color='white'
+    ),
+    selector=dict(mode='markers')
+)
+"""
+px0 = np.linspace(0, max(X), 5)
+px1 = np.linspace(0, max(Y), 5)
+px0, px1 = np.meshgrid(px0, px1)
+z = w[0]*px0 + w[1] * px1 + w[2]
+fig.add_traces(
+    go.Surface(
+        y=px0,
+        x=px1,
+        z=z,
+        colorscale='Viridis',
+        colorbar=dict(title='d_depth')
+    )
+)
+
+fig.update_layout(
+    title='display 3D Surface Plots',
+    xaxis_nticks=36
+)
+fig.update_layout(showlegend=True)
+
+f = str(round(w[0], 2)) + 'x+' + str(round(w[1], 2)) + 'y' + str(round(w[2], 2))
+text = '*f(x,y) =' + f
+fig.add_annotation(
+    x=-0.1,
+    y=0.05,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1
+)
+
+text = '*SD = ' + str(round(np.sqrt(mse), 2))
+fig.add_annotation(
+    x=-0.1,
+    y=0,
+    text=text,
+    font=dict(size=8),
+    showarrow=False,
+    arrowhead=1,
+)
+"""
+fig.show()
+htmlfile = os.path.join(
+    outdir,
+    'PG4699_01_43_a_3D_Plots.html'
+)
+fig.write_html(htmlfile)
+
+# %%
+# x軸:SeqID、y1軸:-log10(FDR)、y2軸:オッズ比とした時の2軸プロット -----
+fig = plt.figure()
+ax1 = fig.subplots()
+
+x = rep1_freq_m.index
+y = rep1_fcfdr['PG4699_01_43_a_FC']
+
+ax1.scatter(x, y, color='black', s=1.2, label='Fold-change')
+ax1.set_ylim(0, y.max()+1)
+
+ax1.set_xlabel('SeqID')
+ax1.set_ylabel('Fold-change')
+
+plt.show()
+
+# %%
+outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4699'
+
+main_title = 'FC'
+x = rep1_freq_m.index
+min_x = x.min()
+max_x = x.max()
+y = rep1_fcfdr['PG4699_01_43_a_FC']
+min_y = y.min()
+max_y = y.max() + 10
+
+
+fig = make_subplots()
+fig.add_trace(
+    go.Scatter(
+        x=x,
+        y=y,
+        mode='markers',
+        marker=dict(
+            color='gray',
+            size=2.0,
+            line=dict(
+                color='black',
+                width=0.7
+            )
+        )
+    )
+)
+fig.update_layout(
+    plot_bgcolor='white'
+    #height=800,
+    #width=900
+)
+fig.update_xaxes(
+    title = 'Seq_ID',
+    showline=True,
+    linewidth=1,
+    linecolor='black',
+    mirror=True,
+    ticks='inside',
+    range=(min_x, max_x)
+)
+fig.update_yaxes(
+    title = 'Fold-change',
+    showline=True,
+    linewidth=1,
+    linecolor='black',
+    mirror=True,
+    ticks='inside',
+    range=(min_y, max_y)
+)
+
+fig.for_each_xaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=15
+        )
+    )
+)
+fig.for_each_yaxis(
+    lambda axis: axis.title.update(
+        font=dict(
+            color='black',
+            size=15
+        )
+    )
+)
+fig.update_annotations(
+    font=dict(size=12),
+)
+fig.update_layout(
+    title=dict(
+        text=main_title,
+        x=0.5,
+        xanchor='center'
+    ),
+    showlegend=False
+)
+#fig.show()
+htmlfile = os.path.join(
+    outdir,
+    'PG4699_01_43_a_FC_plot.html'
+)
+fig.write_html(htmlfile)
 
 # %%
