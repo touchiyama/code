@@ -1832,8 +1832,8 @@ def scatter_with_dist(df, x_label, y_label, outfile):
 
     x = df[x_label].to_numpy()
     y = df[y_label].to_numpy()
-    xymax = max(np.max(x), np.max(y)) + 0.01 #xとyの最大値を定義
-    binwidth = 0.005 #binの値幅を定義。
+    xymax = max(np.max(x), np.max(y)) + 1 #xとyの最大値を定義
+    binwidth = 0.05 #binの値幅を定義。
     bins = np.arange(0, xymax, binwidth) #binの個数を定義
 
     ax.set_xlim([0, xymax])
@@ -1851,8 +1851,10 @@ def scatter_with_dist(df, x_label, y_label, outfile):
     ax_histx.hist(x, bins=bins, color='gray') #xについてのヒストグラム作成
     ax_histy.hist(y, bins=bins, orientation='horizontal', color='gray') #yについてのヒストグラム作成
 
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    #ax.set_xlabel(x_label)
+    #ax.set_ylabel(y_label)
+    ax.set_xlabel(f'log10(({x_label})x10000)')
+    ax.set_ylabel(f'log10(({y_label})x10000)')
 
     ax.legend(
         bbox_to_anchor=(1.3, 1.4),
@@ -1866,9 +1868,23 @@ def scatter_with_dist(df, x_label, y_label, outfile):
     plt.savefig(outfile)
 
 # %%
-#paired-sample(controlのカウント値は1以上)
+#paired-sample(controlのカウント値は1以上)　*生データのスケールを合わせた場合
 outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4699'
-df = rep1_freq_m
+df_10000 = rep1_freq_m  * 10000
+df_10000_m = df_10000.replace(0, 1)
+df_log10 = np.log10(df_10000_m)
+x_label = 'PG4699_43_a_Freq'
+y_label = 'PG4699_01_a_Freq'
+name1 = re.compile(r'(.*)_a').search(y_label).group(1)
+name2 = re.compile(r'PG.*_(.*_a)_Freq').search(x_label).group(1)
+name = name1 + '_' + name2 + '_scatter.png'
+outfile = os.path.join(outdir, name)
+scatter_with_dist(df_log10, x_label, y_label, outfile)
+
+# %%
+#paired-sample(controlのカウント値は1以上)　*生データの場合
+outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4699'
+df_10000 = rep1_freq_m
 for cols in df.columns.values:
     x_label = 'PG4699_43_a_Freq'
     if cols != x_label:
@@ -1892,64 +1908,8 @@ for cols in df.columns.values:
         outfile = os.path.join(outdir, name)
         scatter_with_dist(df, x_label, y_label, outfile)
 
-
 # %%
 # 3D plot ----
-mesh_size = 1.5
-#xrange = np.arange(0, mesh2D.index.size, mesh_size)
-#yrange = np.arange(0, mesh2D.columns.size, mesh_size)
-
-fig = px.scatter_3d(
-    af100_agg,
-    x='frag_total',
-    y='adapter',
-    z='d_Depth',
-    color='agg',
-    symbol='agg',
-    range_x=(0, 250),
-    range_y=(0, 250),
-    range_z=(0, 250)
-)
-fig.update_traces(marker_coloraxis=None)
-fig.update_layout(
-    showlegend=True,
-    legend=dict(
-        x=-0.1,
-        xanchor='left',
-        y=1,
-        yanchor='auto'
-    )
-)
-fig.update_traces(
-    marker=dict(
-        size=3.0,
-        line=dict(width=1.0, color='DarkSlateGrey')
-        #color='white'
-    ),
-    selector=dict(mode='markers')
-)
-"""
-px0 = np.linspace(0, af100_agg['frag_total'].max(), 100)
-px1 = np.linspace(0, af100_agg['adapter'].max(), 100)
-px0, px1 = np.meshgrid(px0, px1)
-z = -(px0 * coef[0] + px1 * coef[1] + intercept) / coef[2]
-fig.add_traces(
-    go.Surface(
-        x=px0,
-        y=px1,
-        z=z,
-        colorscale='Viridis',
-        colorbar=dict(title='d_depth')
-    )
-)
-"""
-fig.update_layout(
-    title='display 3D Surface Plots (AgglomerativeClustering)',
-    xaxis_nticks=36
-)
-
-
-# %%
 rep1_fcfdr = mesh2D.loc[
     rep1_freq_m.index.tolist(),
     'PG4699_01_43_a_FC':'PG4699_20_43_a_FDR'
@@ -1958,9 +1918,8 @@ rep1_fcfdr['SeqID'] = pd.Series([f'Seq_'+ str(i) for i in rep1_freq_m.index.toli
 log10FDR = (-1) * np.log10(rep1_fcfdr['PG4699_01_43_a_FDR'].replace(0, 1e-300))
 data = pd.concat([rep1_fcfdr['SeqID'], rep1_fcfdr['PG4699_01_43_a_FC'], log10FDR], axis=1)
 
-
 # %%
-# ToDo: p値の補正をbofferoniであることを確認すること
+# ToDo: p値の補正をbofferoni法であることを確認すること
 
 outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4699'
 
@@ -2042,7 +2001,7 @@ htmlfile = os.path.join(
 fig.write_html(htmlfile)
 
 # %%
-# x軸:SeqID、y1軸:-log10(FDR)、y2軸:オッズ比とした時の2軸プロット -----
+# x軸:SeqID、y軸:オッズ比とした時のプロット -----
 fig = plt.figure()
 ax1 = fig.subplots()
 
@@ -2056,6 +2015,13 @@ ax1.set_xlabel('SeqID')
 ax1.set_ylabel('Fold-change')
 
 plt.show()
+
+# %%
+# cheak ----
+# FC=281のサンプルを確認
+data[data['SeqID'] == 'Seq_1345002']
+rep1_freq_m.iloc[86011, :]
+rep1_freq_m.describe()
 
 # %%
 outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4699'
