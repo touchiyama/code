@@ -423,6 +423,7 @@ def PRESS(y, y_hat):
 def pls_cv(X, Y, maxLV, K=10):
     """
     クロスバリデーションでPLSの最適な潜在変数の数を探索
+    データの分割の記述方法を修正し、RMSE算出も追加
     ---------- パラメータ
     X: 入力データ
     Y: 出力データ
@@ -479,7 +480,7 @@ def pls_cv(X, Y, maxLV, K=10):
     # 各潜在変数について、PRESSとRMSEを求める
     press = np.sum(res_press, axis=0)
     rmse = np.sqrt(np.mean(res_mse, axis=0))
-    # PRESS が最小となったとき潜在変数を探索します
+    # PRESS が最小となったとき潜在変数を探索
     optR = R[np.argmin(press)]
     return optR, press, rmse
 
@@ -556,3 +557,77 @@ def pls_cv(X, Y, maxLV , K=10):
     optR = R[np.argmin(press)]
     return optR, press
 """
+
+# %%
+import numpy as np
+from sklearn.cluster import SpectralClustering
+from linear_regression import simpls
+
+def nc(X, gamma=0.99):
+    """
+    NC 法を用いた類似度行列の計算
+
+    パラメータ
+    ----------
+    X: 入力データ
+    gamma : 相係関係の有無の判定の閾値(デフォルト: 0.99)
+
+    戻り値
+    -------
+    S: 類似度行列
+    """
+
+    N, _ = X.shape
+    S = np.zeros([N,N])
+    X = X.T
+
+    # 類似度行列を計算します
+    for i in range(N):
+        # クエリをすべてのサンプルから引きます
+        Xq = X[:,i].reshape(-1, 1)
+        Xs = X
+        Xm = Xs - Xq
+
+    # 相関係数を計算します
+    V =(Xm.T @ Xm)/(N - 1)
+    d = np.sqrt(np.diag(V)).reshape(-1, 1)
+    D = d @ d.T
+    R = np.divide(V, D, out = np.zeros_like(V), where = D != 0)
+    R = np.nan_to_num(R) # NaN を除去します
+    ZERO_DIAG =(np.eye(N) - 1)* -1
+    R = R * ZERO_DIAG
+
+    # 相関関係を有するサンプルのペアに重みを与える
+    R = np.abs(R)
+    R[R > gamma] = 1
+    R[R < gamma] = 0
+
+    # 類似度行列を更新
+    S += R
+    return S
+
+# %%
+def ncsc(X, n_clusters, gamma=0.99):
+    """
+    NCSC を用いて相関関係に基づいたクラスタリングを実行します
+
+    パラメータ
+    ----------
+    X: 入力データ
+    n_clusters: 分割するクラスタの数
+    gamma: 相関関係の有無の判定の閾値(デフォルト: 0.99)
+
+    戻り値
+    -------
+    labels: それぞれのサンプルのクラスタラベル
+    """
+
+    # NC 法による類似度行列の構築
+    S = nc(X)
+
+    # スペクトラルクラスタリングの実行
+    clustering = SpectralClustering(n_clusters, affinity = 'precomputed',
+                                    assign_labels ='discretize',
+                                    random_state =0).fit(S)
+    labels = clustering.labels_
+    return labels
