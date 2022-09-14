@@ -2109,20 +2109,33 @@ htmlfile = os.path.join(
 )
 fig.write_html(htmlfile)
 
-# %%
+#%%
 # make heatmap ---
+
 fig = make_subplots(
     rows=1,
     cols=2,
     y_title='Seq_ID',
     x_title='Sample(normalized)',
-    column_widths=[30, 1],
-    horizontal_spacing=0.0001,
+    column_widths=[1, 30],
+    horizontal_spacing=0.00001,
     shared_yaxes=True
 )
 
 
-y = rep1_filter['Header_ID']
+fig.add_trace(
+    go.Heatmap(
+        z=rep1_filter.loc[:, ['cluster']],
+        y = rep1_filter['Header_ID'],
+        x=rep1_filter.loc[:, ['cluster']].columns.values,
+        colorscale='rainbow',
+        showscale=False
+    ),
+    row=1,
+    col=1
+)
+
+
 x = rep1_filter.iloc[:, 1:len(rep1_filter.columns) - 1].columns.values
 z = rep1_filter.iloc[:, 1:len(rep1_filter.columns) - 1]
 
@@ -2133,19 +2146,8 @@ fig.add_trace(
         ),
         z=z,
         x=x,
-        y=y,
+        #y=y,
         colorscale='Viridis'
-    ),
-    row=1,
-    col=1
-)
-
-fig.add_trace(
-    go.Heatmap(
-        z=rep1_filter.loc[:, ['cluster']],
-        x=rep1_filter.loc[:, ['cluster']].columns.values,
-        colorscale='rainbow',
-        showscale=False
     ),
     row=1,
     col=2
