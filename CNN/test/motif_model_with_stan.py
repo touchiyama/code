@@ -2110,3 +2110,74 @@ htmlfile = os.path.join(
 fig.write_html(htmlfile)
 
 # %%
+# make heatmap ---
+fig = make_subplots(
+    rows=1,
+    cols=2,
+    y_title='Seq_ID',
+    x_title='Sample(normalized)',
+    column_widths=[30, 1],
+    horizontal_spacing=0.0001,
+    shared_yaxes=True
+)
+
+
+y = rep1_filter['Header_ID']
+x = rep1_filter.iloc[:, 1:len(rep1_filter.columns) - 1].columns.values
+z = rep1_filter.iloc[:, 1:len(rep1_filter.columns) - 1]
+
+fig.add_trace(
+    go.Heatmap(
+        colorbar=dict(
+            title='z-score'
+        ),
+        z=z,
+        x=x,
+        y=y,
+        colorscale='Viridis'
+    ),
+    row=1,
+    col=1
+)
+
+fig.add_trace(
+    go.Heatmap(
+        z=rep1_filter.loc[:, ['cluster']],
+        x=rep1_filter.loc[:, ['cluster']].columns.values,
+        colorscale='rainbow',
+        showscale=False
+    ),
+    row=1,
+    col=2
+)
+
+fig.update_layout(
+    #plot_bgcolor='white'
+    height=800,
+    width=700,
+    font=dict(
+        size=5
+    )
+)
+
+fig.update_annotations(
+   font=dict(size=10),
+)
+
+fig.update_yaxes(autorange='reversed')
+
+fig.update_layout(
+    title=dict(
+        text='Brain_High_heatmap_rep1',
+        x=0.5,
+        xanchor='center'
+    ),
+)
+
+
+fig.show()
+htmlfile = os.path.join(
+    '/Users/tomoyauchiyama/code/CNN/test/PG4699',
+    'PG4699_Brain_High_heatmap_rep1.html'
+)
+fig.write_html(htmlfile)
