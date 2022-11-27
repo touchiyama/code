@@ -14,6 +14,13 @@
         → 全てのデータを踏まえて生成された潜在変数を少数用いる
     - データに含まれるノイズから大きな影響を受ける
         → 重要度（回帰係数）の高い潜在変数から順番に用いる
+
+
+・評価
+    - 最初にPLSで最適なパラメータを探索し、そのパラメータでVIPスコアを用いた評価を行う。
+      次にVIPスコアに基づき選択された入力値で、再度パラメータチューニングを行いPLSで学習
+    - RMSEとr（実測値と予測値との相関係数）で評価
+
 """
 
 # %%
@@ -527,7 +534,7 @@ def pls_cv(X, Y, maxLV , K=10):
 
 # %%
 # 回帰モデルの評価 ---
-# 回帰モデルの性能評価の指標には、平均的な予測誤差の指標である
+# 回帰モデルの性能評価の指標には、平均的な予測誤差の指標である、
 # 根平均二乗誤差RMSE(Root Mean Squered Error)が用いられることが多い
 
 def pred_eval(y, y_hat, plotflg = False):
@@ -549,7 +556,7 @@ def pred_eval(y, y_hat, plotflg = False):
     r = np.corrcoef(y, y_hat)[0,1]
 
     if plotflg:
-        # 散布図をプロッ
+        # 散布図をプロット
         fig, ax = plt.subplots()
         plt.xlabel('Reference ')
         plt.ylabel('Prediction ')
@@ -559,7 +566,7 @@ def pred_eval(y, y_hat, plotflg = False):
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
 
-        plt.plot([xmin,xmax], [ymin,ymax], color = "darkgreen", linestyle = "dashed")
+        plt.plot([xmin,xmax], [ymin,ymax], color = 'gray', linestyle = 'dashed')
 
         r_text = f'r={r:.2f}'
         rmse_text = f'rmse ={ rmse :.2f}'
@@ -573,3 +580,220 @@ def pred_eval(y, y_hat, plotflg = False):
         plt.show()
 
     return rmse, r
+
+# %%
+"""
+Lasso回帰モデルの実装
+・positionごとの配列の寄与を調べるために、解釈しやすいLasso回帰モデルがよく用いられている。
+    - L1正規化により、完全に0となる回帰係数があるため、使われる特徴量が明確
+・ハイパーパラメーター(alpha)の値が大きくなると、入力変数が0に近づく。
+・alpha = 10^-1 〜 10^-10の範囲で、パラメータチューニングを行う。
+・非ゼロの特徴量（回帰係数）の数が最小となるか？ - RMSEとr（実測値と予測値との相関係数）で評価
+"""
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import Lasso
+from sklearn.model_selection import GridSearchCV
+import sklearn.metrics as metrics
+
+# %%
+# 訓練データとテストデータに分ける ---
+# 訓練データを用いて訓練（学習）して予測モデルを構築し、
+# その予測モデル構築に用いなかったテストデータをどのくらい正しく予測できるかで性能評価
+# パラメータのoverfittingを防ぎたい
+X = np.array(
+    [
+        [-1.12, -0.51, 0.69],
+        [-0.43, -1.12, 1.02],
+        [0.37, 1.10, -0.98],
+        [1.19, 0.53, -0.73],
+    ]
+)
+y = np.array(
+    [0.40, 1.17, -1.14, -0.42]
+)
+#X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
+
+# %%
+# グリッドリサーチ（パラメータチューニング）の実行 ---
+# scoreはどのように算出されているのか？
+
+N = X_train.shape[0]
+grid_param = {'alpha': [0.00001, 0.0001, 0.001, 0.01, 0.1]}
+grid_search = GridSearchCV(Lasso(max_iter=100000), grid_param, cv=N, n_jobs=-1)
+grid_search.fit(X_train, y_train)
+
+print('Accuracy Score (train) : ', grid_search.score(X_train, y_train))
+print('Accuracy Score (test) : ', grid_search.score(X_test, y_test))
+
+print('Best Parameters : ', grid_search.best_params_)
+print('Best CV Score : ', grid_search.best_score_) # trainデータに対するCVの平均CV精度
+print('Best Estimator : ', grid_search.best_estimator_)
+
+# %%
+# グリッドリサーチに基づく再学習 ---
+
+lasso = Lasso(alpha=XXX, max_iter=100000).fit(X_train, y_train)
+y_test_lasso = X_test @ lasso.coef_
+print('Accuracy Score (train) : ', lasso.score(X_train, y_train))
+print('Accuracy Score (test) : ', lasso.score(X_test, y_test))
+print('# of feat used', np.sum(lasso.coef_ != 0))
+
+# %%
+# 回帰モデルの評価 ---
+
+y_test_lasso = grid_search.predict(X_test) # グリッドリサーチに基づく再学習
+
+print('# of feat used', np.sum(grid_search.coef_ != 0))
+print('R2=', metrics.r2_score(y_test, y_test_lasso))
+print('RMSE=', np.sqrt(metrics.mean_squared_error(y_test, y_test_lasso)))
+#print('MAE=', metrics.mean_absolute_error(y_test, y_test_lasso))
+
+pred_eval(y_test, y_test_lasso, plotflg = True)
+
+# %%
+# positionごとの配列の寄与度（回帰係数の大きさ）を可視化 ---
+fig, ax = plt.subplots()
+
+plt.plot(grid_search.coef_)
+
+plt.xlabel('Position')
+plt.ylabel('Contributions(Coefficient magntude)')
+plt.show()
+
+# %%
+"""scikit-learnによるPLS回帰モデルの実装
+・scikit-learnでは、特異値分解に基づくSIMPLSアルゴリズムが実装されている
+・VIPスコアで変数選択する前に、PLS回帰モデルで学習
+"""
+from sklearn.cross_decomposition import PLSRegression
+
+# %%
+# 訓練データとテストデータに分ける ---
+
+X = np.array(
+    [
+        [-1.12, -0.51, 0.69],
+        [-0.43, -1.12, 1.02],
+        [0.37, 1.10, -0.98],
+        [1.19, 0.53, -0.73],
+    ]
+)
+y = np.array(
+    [0.40, 1.17, -1.14, -0.42]
+)
+#X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
+
+# %%
+# グリッドリサーチ（パラメータチューニング）の実行 ---
+
+N = X_train.shape[0]
+grid_param = {
+    'n_components': [2, 3, 4, 5, 6, 7, 8, 9],
+    'scale':[True, False],
+    'max_iter': [1000, 10000]
+}
+grid_search = GridSearchCV(PLSRegression(), grid_param, cv=N, n_jobs=-1)
+grid_search.fit(X_train, y_train)
+
+print('Accuracy Score (train) : ', grid_search.score(X_train, y_train))
+print('Accuracy Score (test) : ', grid_search.score(X_test, y_test))
+
+print('Best Parameters : ', grid_search.best_params_)
+print('Best CV Score : ', grid_search.best_score_) # trainデータに対するCVの平均CV精度
+print('Best Estimator : ', grid_search.best_estimator_)
+
+# %%
+# 回帰モデルの評価 ---
+y_test_pls = grid_search.predict(X_test) # グリッドリサーチに基づく再学習
+
+print('R2=', metrics.r2_score(y_test, y_test_pls))
+print('RMSE=', np.sqrt(metrics.mean_squared_error(y_test, y_test_pls)))
+#print('MAE=', metrics.mean_absolute_error(y_test, y_test_lasso))
+
+pred_eval(y_test, y_test_pls, plotflg = True)
+
+# %%
+# positionごとの配列の寄与度（回帰係数の大きさ）を可視化 ---
+fig, ax = plt.subplots()
+
+plt.plot(grid_search.coef_)
+
+plt.xlabel('Position')
+plt.ylabel('Contributions(Coefficient magntude)')
+plt.show()
+
+## %%
+"""scikit-learnのPLSRegression()メソッドからVIPスコアを算出
+パラメータ ----------
+    W, D: PLSのモデルパラメータ(W:入力変数の重み、D:回帰係数)
+    T: PLSの潜在変数行列
+
+PLS = PLSRegression()とすると、
+重みベクトルW -> 右特異的ベクトルに対応（PLS.y_weights_）
+回帰係数D -> PLS.coef_
+PLSの潜在変数行列 -> X_train @ PLS.y_weights_
+"""
+W = grid_search.y_weights_
+D = grid_search.coef_
+T = X_train @ W
+
+sel_var, vips = pls_vip(W, D, T) # vipスコアの算出
+
+# %%
+# VIPスコアに基づく回帰係数の評価を可視化 (positionごとの配列の寄与度) ---
+
+fig, ax = plt.subplots()
+
+plt.plot(vips)
+
+plt.xlabel('Position')
+plt.ylabel('Contributions(Coefficient magntude)')
+plt.show()
+
+# %%
+# VIPスコアに基づきデータセットの再構築 --
+X_train_sel = X_train[:, sel_var]
+X_test_sel = X_test[:, sel_var]
+
+# %%
+# VIPスコアに基づき、グリッドリサーチ（パラメータチューニング）の再実行 ---
+
+N = X_train.shape[0]
+grid_param = {
+    'n_components': [2, 3, 4, 5, 6, 7, 8, 9],
+    'scale':[True, False],
+    'max_iter': [1000, 10000]
+}
+grid_search = GridSearchCV(PLSRegression(), grid_param, cv=N, n_jobs=-1)
+grid_search.fit(X_train_sel, y_train)
+
+print('Accuracy Score (train) : ', grid_search.score(X_train_sel, y_train))
+print('Accuracy Score (test) : ', grid_search.score(X_test_sel, y_test))
+
+print('Best Parameters : ', grid_search.best_params_)
+print('Best CV Score : ', grid_search.best_score_) # trainデータに対するCVの平均CV精度
+print('Best Estimator : ', grid_search.best_estimator_)
+
+# %%
+# 回帰モデルの評価 ---
+y_test_pls = grid_search.predict(X_test_sel) # グリッドリサーチに基づく再学習
+
+print('R2=', metrics.r2_score(y_test, y_test_pls))
+print('RMSE=', np.sqrt(metrics.mean_squared_error(y_test, y_test_pls)))
+#print('MAE=', metrics.mean_absolute_error(y_test, y_test_lasso))
+
+pred_eval(y_test, y_test_pls, plotflg = True)
+
+# %%
+# positionごとの配列の寄与度（回帰係数の大きさ）を可視化 ---
+fig, ax = plt.subplots()
+
+plt.plot(grid_search.coef_)
+
+plt.xlabel('Position')
+plt.ylabel('Contributions(Coefficient magntude)')
+plt.show()
+
+# %%
