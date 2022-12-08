@@ -796,4 +796,55 @@ plt.xlabel('Position')
 plt.ylabel('Contributions(Coefficient magntude)')
 plt.show()
 
+
+# %%
+import re
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# %%
+file = '/Users/tomoyauchiyama/code/CNN/test/PG4796_Ascan_Summary.xlsx'
+df_dna = pd.read_excel(file, sheet_name='DNA')
+# %%
+col_list = []
+for name in df_dna.columns:
+    if 'Mean' in name:
+        col_list.append(name)
+# %%
+df_dna_mean = df_dna.loc[:, ['Ascan', 'AA_seq'] + col_list]
+
+# %%
+for name in col_list:
+    if not 'DNA#Brain_Mean' in name:
+        fig, ax = plt.subplots()
+
+        x_label = 'DNA#Brain_Mean'
+        y_label = name
+        x = np.log2(df_dna_mean[x_label] + 1)
+        y = np.log2(df_dna_mean[y_label] + 1)
+        xymax = max(np.max(x), np.max(y)) + 1 #xとyの最大値を定義
+        ax.set_xlim([0, xymax])
+        ax.set_ylim([0, xymax])
+        ax.scatter(x, y, color='black', s=10.0)
+        #ax.scatter(top100_xy[x_label], top100_xy[y_label], color='red', s=2.0, label='top100')
+        ax.plot([0, xymax], [0, xymax], color='gray', linestyle='--', label='FC=1')
+
+        x_name = re.compile(r'DNA#(.*)_Mean').search(x_label).group(1)
+        y_name = re.compile(r'DNA#(.*)_Mean').search(y_label).group(1)
+        ax.axvline(5, color='gray', linestyle='--', label=f'{x_name}_G') # qPCRの値
+        ax.axhline(5, color='gray', linestyle='--', label=f'{y_name}_G') # qPCRの値
+
+        x_name = re.compile(r'DNA#(.*)').search(x_label).group(1)
+        y_name = re.compile(r'DNA#(.*)').search(y_label).group(1)
+        ax.set_xlabel(f'log2(({x_name})+1)')
+        ax.set_ylabel(f'log2(({y_name})+1)')
+        ax.legend(
+            bbox_to_anchor=(1.3, 1.0),
+            loc='upper right',
+            #borderaxespad=0,
+            fontsize=8
+        )
+
+        plt.show()
+
 # %%
