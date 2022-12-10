@@ -582,10 +582,12 @@ def pred_eval(y, y_hat, plotflg = False):
     return rmse, r
 
 # %%
+# 数理モデルの構築 ---
 import pandas as pd
 import scipy.stats as st
 
 # %%
+# データの前処理 ---
 file = '/Users/tomoyauchiyama/code/CNN/test/PG4796_Ascan_log2_norm.xlsx'
 df_norm = pd.read_excel(file, sheet_name='log2_norm')
 
