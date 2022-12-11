@@ -558,22 +558,27 @@ def pred_eval(y, y_hat, plotflg = False):
     if plotflg:
         # 散布図をプロット
         fig, ax = plt.subplots()
-        plt.xlabel('Reference ')
-        plt.ylabel('Prediction ')
-        plt.scatter(y, y_hat)
+        plt.xlabel('Reference')
+        plt.ylabel('Prediction')
+        plt.scatter(y, y_hat, color='black')
 
         # プロットの範囲を取得
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
 
+        #xymax = max(xmax, ymax)
+        #xymin = min(xmin, ymin)
+        #ax.set_xlim([xymin, xymax])
+        #ax.set_ylim([xymin, xymax])
+
         plt.plot([xmin,xmax], [ymin,ymax], color = 'gray', linestyle = 'dashed')
 
         r_text = f'r={r:.2f}'
-        rmse_text = f'rmse ={ rmse :.2f}'
+        rmse_text = f'rmse={ rmse :.2f}'
 
-        posx = (xmax - xmin)*0.1 + xmin
-        posy_1 = (ymax - ymin)*0.8 + ymin
-        posy_2 = (ymax - ymin)*0.75 + ymin
+        posx = (xmax - xmin)*0.01 + xmin
+        posy_1 = (ymax - ymin)*0.95 + ymin
+        posy_2 = (ymax - ymin)*0.90 + ymin
         ax.text(posx, posy_1, r_text)
         ax.text(posx, posy_2, rmse_text)
 
@@ -1201,3 +1206,37 @@ plt.suptitle('Increased element_size')
 plt.show()
 
 # %%
+fig, ax = plt.subplots()
+# 棒の配置位置、ラベルを用意
+labels = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9'
+]
+x = np.array([i+1 for i in range(len(labels))])
+
+# 各系列のデータを用意
+data = {}
+for i in range(len(labels)):
+    data[str(i+1)] = np.random.rand(7)
+
+# マージンを設定
+margin = 0.2  #0 <margin< 1
+totoal_width = 1 - margin
+
+# 棒グラフをプロット
+xx = np.array([i+1 for i in range(7)])
+
+for i, h in enumerate(labels):
+  pos = x - (totoal_width * (1 - ((2*i+1)/len(labels))) / 2)
+  plt.bar(pos, data[h], width=totoal_width/(len(data[h])))
+
+# ラベルの設定
+plt.xticks(x, labels, rotation=90)
+plt.xlabel('Position')
+plt.show()
+
+# %%
+pos = x - (totoal_width * (1 - ((2*i+1)/len(labels))) / 2)
+
+
+# %%
+plt.bar(2, data[h], width=totoal_width/(len(data[h])))
