@@ -537,7 +537,7 @@ def pls_cv(X, Y, maxLV , K=10):
 # 回帰モデルの性能評価の指標には、平均的な予測誤差の指標である、
 # 根平均二乗誤差RMSE(Root Mean Squered Error)が用いられることが多い
 
-def pred_eval(y, y_hat, plotflg = False):
+def pred_eval(y, y_hat, title, plotflg = False):
     """
     RMSEと相関係数を計算
 
@@ -558,18 +558,14 @@ def pred_eval(y, y_hat, plotflg = False):
     if plotflg:
         # 散布図をプロット
         fig, ax = plt.subplots()
-        plt.xlabel('Reference')
-        plt.ylabel('Prediction')
+        plt.title(f'{title}')
+        plt.xlabel('Prediction(y_test_model)')
+        plt.ylabel('Reference(y_test)')
         plt.scatter(y, y_hat, color='black')
 
         # プロットの範囲を取得
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
-
-        #xymax = max(xmax, ymax)
-        #xymin = min(xmin, ymin)
-        #ax.set_xlim([xymin, xymax])
-        #ax.set_ylim([xymin, xymax])
 
         plt.plot([xmin,xmax], [ymin,ymax], color = 'gray', linestyle = 'dashed')
 
@@ -780,6 +776,7 @@ plt.show()
 ・scikit-learnでは、特異値分解に基づくSIMPLSアルゴリズムが実装されている
 ・VIPスコアで変数選択する前に、PLS回帰モデルで学習
 """
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.model_selection import GridSearchCV
@@ -793,50 +790,198 @@ import sklearn.metrics as metrics
 
 X = np.array(df_X1_drop['X'].values.tolist())
 y = st.zscore(df_X1_drop['DNA#Cortex#101_Norm'].values, ddof=1, axis=0)
-#X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+#X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
 
 # %%
 # グリッドリサーチ（パラメータチューニング）の実行 ---
-N = X_train.shape[0]
-grid_param = {
-    'n_components': [2, 3, 4, 5, 6, 7],
-    'scale':[True, False]
-}
-grid_search = GridSearchCV(PLSRegression(), grid_param, cv=10, n_jobs=-1)
-grid_search.fit(X_train, y_train)
+# N = X_train.shape[0]
+# grid_param = {
+#     'n_components': [2, 3, 4, 5, 6, 7],
+#     'scale':[True, False]
+# }
 
-print('Accuracy Score (train) : ', grid_search.score(X_train, y_train))
-print('Accuracy Score (test) : ', grid_search.score(X_test, y_test))
+def GS_PLSReg(X_train, y_train, X_test, y_test, outfile, grid_param, n_cv=10):
+    grid_search = GridSearchCV(
+        PLSRegression(),
+        grid_param,
+        scoring='neg_root_mean_squared_error',
+        cv=n_cv,
+        n_jobs=-1
+    )
+    grid_search.fit(X_train, y_train)
 
-print('Best Parameters : ', grid_search.best_params_)
-print('Best CV Score : ', grid_search.best_score_) # trainデータに対するCVの平均CV精度
-print('Best Estimator : ', grid_search.best_estimator_)
+    name = os.path.splitext(os.path.basename(outfile))[0]
+    with open(outfile, 'w') as wf:
+        print(f'@{name}')
+        wf.write(f'@{name}\n')
+        print('Accuracy Score (train) : ', (-1) * grid_search.score(X_train, y_train))
+        wf.write(f'Accuracy Score (train) : {(-1) * grid_search.score(X_train, y_train)}\n')
+        print('Accuracy Score (test) : ', (-1) * grid_search.score(X_test, y_test))
+        wf.write(f'Accuracy Score (test) : {(-1) * grid_search.score(X_test, y_test)}\n')
+        print('Best Parameters : ', grid_search.best_params_)
+        wf.write(f'Best Parameters : {grid_search.best_params_}\n')
+        print('Best CV Score : ', (-1) * grid_search.best_score_) # trainデータに対するCVの平均CV精度
+        wf.write(f'Best CV Score : {(-1) * grid_search.best_score_}\n')
+        print('Best Estimator : ', grid_search.best_estimator_)
+        wf.write(f'Best Estimator : {grid_search.best_estimator_}\n')
 
-pls_best = grid_search.best_estimator_
+    pls_best = grid_search.best_estimator_
 
-# %%
-# 回帰モデルの評価 ---
-pls = pls_best.fit(X_train, y_train)
-pls_coef = np.hstack(pls.coef_)
-y_test_pls = X_test @ pls_coef
+    # 回帰モデルの評価 ---
+    pls = pls_best.fit(X_train, y_train)
+    pls_coef = np.hstack(pls.coef_)
+    y_test_pls = X_test @ pls_coef
+    rmse, r = pred_eval(y_test, y_test_pls, name, plotflg=True)
 
-print('R2=', metrics.r2_score(y_test, y_test_pls))
-print('RMSE=', np.sqrt(metrics.mean_squared_error(y_test, y_test_pls)))
-pred_eval(y_test, y_test_pls, plotflg = True)
+    return pls_coef, rmse, r
 
 # %%
 # positionごとの配列の寄与度（回帰係数の大きさ）を可視化 ---
-fig, ax = plt.subplots()
+def plot_coef(x, coef, outfile):
+    fig, ax = plt.subplots()
 
-plt.bar([1, 2, 3, 4, 5, 6, 7], pls_coef, width=0.02, color='black', align='center')
-plt.scatter([1, 2, 3, 4, 5, 6, 7], pls_coef, color='black')
+    plt.bar(x, coef, width=0.02, color='black', align='center')
+    plt.scatter(x, coef, color='black')
+    plt.axhline(y=0, color='gray', linestyle='--')
+    title = os.path.splitext(os.path.basename(outfile))[0]
+    plt.title(f'{title}')
+    plt.xlabel('Position')
+    plt.ylabel('Contributions(Coefficient magntude)')
+    plt.savefig(outfile, bbox_inches='tight', dpi=300)
+    plt.show()
 
-plt.axhline(y=0, color='gray', linestyle='--')
-plt.xlabel('Position')
-plt.ylabel('Contributions(Coefficient magntude)')
+# %%
+# 小規模パイプライン化 ---
+# rep1
+outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4796'
+x = [1, 2, 3, 4, 5, 6, 7]
+PLS_1 = pd.DataFrame()
+
+for col in df_X1_drop.iloc[:, 2:].columns:
+    X = np.array(df_X1_drop['X'].values.tolist())
+    y = st.zscore(df_X1_drop[col].values, ddof=1, axis=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+    outfile = os.path.join(outdir, col + '_PLS_GS.txt')
+    grid_param = {
+        'n_components': [2, 3, 4, 5, 6, 7],
+        'scale':[True, False]
+    }
+    pls_coef, rmse, r = GS_PLSReg(X_train, y_train, X_test, y_test, outfile, grid_param, n_cv=10)
+    outfile = os.path.join(outdir, col + '_coef.png')
+    plot_coef(x, pls_coef, outfile)
+
+    name = re.compile(r'(.*)#101_Norm').search(col).group(1)
+    row = pd.Series([name, pls_coef, rmse, r])
+    PLS_1 = PLS_1.append(row, ignore_index=True)
+
+PLS_1.columns = ['SampleID', 'PLS_coef', 'RMSE', 'r']
+
+
+# %%
+# rep2
+outdir = '/Users/tomoyauchiyama/code/CNN/test/PG4796'
+x = [1, 2, 3, 4, 5, 6, 7]
+PLS_2 = pd.DataFrame()
+
+for col in df_X2_drop.iloc[:, 2:].columns:
+    X = np.array(df_X2_drop['X'].values.tolist())
+    y = st.zscore(df_X2_drop[col].values, ddof=1, axis=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+    outfile = os.path.join(outdir, col + '_PLS_GS.txt')
+    grid_param = {
+        'n_components': [2, 3, 4, 5, 6, 7],
+        'scale':[True, False]
+    }
+    pls_coef, rmse, r = GS_PLSReg(X_train, y_train, X_test, y_test, outfile, grid_param, n_cv=10)
+    outfile = os.path.join(outdir, col + '_coef.png')
+    plot_coef(x, pls_coef, outfile)
+
+    name = re.compile(r'(.*)#102_Norm').search(col).group(1)
+    row = pd.Series([name, pls_coef, rmse, r])
+    PLS_2 = PLS_2.append(row, ignore_index=True)
+
+PLS_2.columns = ['SampleID', 'PLS_coef', 'RMSE', 'r']
+
+# %%
+# rep1とrep2の回帰係数をまとめる ---
+PLS_coef_1 = pd.DataFrame()
+for i in range(len(PLS_1)):
+    sampleID = PLS_1.loc[i, 'SampleID']
+    coef = pd.Series([sampleID] + [j for j in PLS_1.loc[i, 'PLS_coef']])
+    PLS_coef_1 = PLS_coef_1.append(coef, ignore_index=True)
+
+PLS_coef_1.columns = ['SampleID'] + [1, 2, 3, 4, 5, 6, 7]
+
+PLS_coef_2 = pd.DataFrame()
+for i in range(len(PLS_2)):
+    sampleID = PLS_2.loc[i, 'SampleID']
+    coef = pd.Series([sampleID] + [j for j in PLS_2.loc[i, 'PLS_coef']])
+    PLS_coef_2 = PLS_coef_2.append(coef, ignore_index=True)
+
+PLS_coef_2.columns = ['SampleID'] + [1, 2, 3, 4, 5, 6, 7]
+
+# %%
+# rep1とrep2間の回帰係数の平均値と標準偏差を算出 ---
+PLS_coef_merge = pd.concat([PLS_coef_1, PLS_coef_2]).reset_index(drop=True)
+coef_mean = PLS_coef_merge.groupby(['SampleID']).agg('mean').reset_index()
+coef_std = PLS_coef_merge.groupby(['SampleID']).agg('std').reset_index()
+df_PLS_coef = pd.merge(coef_mean, coef_std,  how='left', on='SampleID')
+
+# %%
+# 結果の可視化準備（rep1とrep2間の回帰係数の平均値）---
+df_tmp = df_PLS_coef[
+    ['SampleID', '1_x', '2_x', '3_x', '4_x', '5_x',	'6_x', '7_x']
+].rename(
+    columns={
+        '1_x': '1', '2_x': '2', '3_x': '3',
+        '4_x': '4', '5_x': '5',	'6_x': '6', '7_x': '7'
+    }
+)
+df_T = df_tmp.T
+df_coef_mean = df_T.iloc[1:, :]
+df_coef_mean.columns = df_T.iloc[0, :].values
+
+# 結果の可視化準備（rep1とrep2間の回帰係数の標準偏差）---
+df_tmp = df_PLS_coef[
+    ['SampleID', '1_y', '2_y', '3_y', '4_y', '5_y',	'6_y', '7_y']
+].rename(
+    columns={
+        '1_y': '1', '2_y': '2', '3_y': '3',
+        '4_y': '4', '5_y': '5',	'6_y': '6', '7_y': '7'
+    }
+)
+df_T = df_tmp.T
+df_coef_sd = df_T.iloc[1:, :]
+df_coef_sd.columns = df_T.iloc[0, :].values
+
+# %%
+# rep1とrep2間の回帰係数の平均値と標準偏差の可視化 ---
+fig, ax = plt.subplots(figsize=(20, 8))
+
+col_mod = [
+    'DNA#Brain', 'DNA#Cortex', 'DNA#Spinal_cord', 'DNA#Heart', 'DNA#Kidney',
+    'DNA#Liver', 'DNA#Lung', 'DNA#Muscle', #'DNA#Spleen'
+]
+
+df_coef_mean[col_mod].plot.bar(
+    ax=ax,
+    rot=0,
+    fontsize=13,
+    yerr=df_coef_sd[col_mod],
+    capsize=3
+    #mark_right=True,
+)
+ax.axhline(0, color='gray', linestyle='--')
+ax.set_xlabel('Position', fontsize=13)
+ax.set_ylabel('Contributions (Coefficient magntude)', fontsize=13)
+ax.legend(
+    bbox_to_anchor=(1.2, 1),
+    loc='upper right',
+    fontsize=14
+)
 plt.show()
-
 
 # %%
 """
@@ -1192,51 +1337,15 @@ with pd.ExcelWriter(outfile) as writer:
 
 
 # %%
+# upsetplotの作成 ---
 from upsetplot import from_contents
 from matplotlib import pyplot as plt
 from upsetplot import plot
 # https://upsetplot.readthedocs.io/en/stable/api.html
 
 # %%
-ascan = from_contents(upset_data)
-
 fig = plt.figure(figsize=(12, 5))
+ascan = from_contents(upset_data)
 plot(ascan, sort_by='cardinality', with_lines=False, show_counts=True, fig=fig, element_size=None)
 plt.suptitle('Increased element_size')
 plt.show()
-
-# %%
-fig, ax = plt.subplots()
-# 棒の配置位置、ラベルを用意
-labels = [
-    '1', '2', '3', '4', '5', '6', '7', '8', '9'
-]
-x = np.array([i+1 for i in range(len(labels))])
-
-# 各系列のデータを用意
-data = {}
-for i in range(len(labels)):
-    data[str(i+1)] = np.random.rand(7)
-
-# マージンを設定
-margin = 0.2  #0 <margin< 1
-totoal_width = 1 - margin
-
-# 棒グラフをプロット
-xx = np.array([i+1 for i in range(7)])
-
-for i, h in enumerate(labels):
-  pos = x - (totoal_width * (1 - ((2*i+1)/len(labels))) / 2)
-  plt.bar(pos, data[h], width=totoal_width/(len(data[h])))
-
-# ラベルの設定
-plt.xticks(x, labels, rotation=90)
-plt.xlabel('Position')
-plt.show()
-
-# %%
-pos = x - (totoal_width * (1 - ((2*i+1)/len(labels))) / 2)
-
-
-# %%
-plt.bar(2, data[h], width=totoal_width/(len(data[h])))
