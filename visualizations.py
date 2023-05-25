@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 import plotly.figure_factory as ff
 from plotly.subplots import make_subplots
 
+
 def groups_freq_scatter(lotID, df, bgs, treats, outdir, prefix):
     logger.info('')
     logger.info('Start making freq_dist_scatter..')
@@ -52,7 +53,7 @@ def groups_freq_scatter(lotID, df, bgs, treats, outdir, prefix):
     plt.savefig(pngfile, bbox_inches='tight')
 
 
-def make_heatmap(lotID, Zscore, df, samples, outdir, prefix):
+def heatmap(lotID, Zscore, df, samples, outdir, prefix):
     logger.info('')
     logger.info('Start making heatmap..')
 
@@ -121,7 +122,7 @@ def make_heatmap(lotID, Zscore, df, samples, outdir, prefix):
     logger.info('Finish making heatmap..')
 
 
-def make_sorted_plot(lotID, df, y_names, y_title, outdir, prefix):
+def sorted_plot(lotID, df, y_names, y_title, outdir, prefix):
     logger.info('')
     logger.info('Start making sort_plot..')
 
@@ -219,8 +220,7 @@ def make_sorted_plot(lotID, df, y_names, y_title, outdir, prefix):
     logger.info('Finish making sort_plot..')
 
 
-
-def barcode_reps_scatter(df, tissues):
+def barcode_reps_scatter(df_bc, tissues):
     """_summary_
 
     Args:
@@ -230,6 +230,8 @@ def barcode_reps_scatter(df, tissues):
     """
     import seaborn as sns
     from sklearn.linear_model import LinearRegression
+
+    df = pd.concat([df_bc['BC_ID'], np.log2(df_bc.iloc[:, 2:] + 1)], axis=1)
 
     sns.set_style("white")
 
@@ -265,6 +267,75 @@ def barcode_reps_scatter(df, tissues):
         plt.show()
 
 
+def scatter_with_adjust_text():
+    from adjustText import adjust_text
+
+    file = 'A:/PROJECT/PG4796/900_NOUHIN/report_v03_230331/PG4796_cDNA_Ascan_Summary.xlsx'
+    df_dna = pd.read_excel(file, sheet_name='cDNA')
+
+    col_list = []
+    for name in df_dna.columns:
+        if 'Mean' in name:
+            col_list.append(name)
+
+    file = 'A:/PROJECT/PG4796/200_INFO/00_data/PG4796_normalizationGbeta.xlsx'
+    df_Gbeta = pd.read_excel(file, sheet_name='Gbeta')
+    df_Gbeta_mean = df_Gbeta.loc[:, ['Tissue', 'Mean']].groupby('Tissue').agg('mean').reset_index()
+
+    Gbeta = {}
+    for i in range(len(df_Gbeta_mean)):
+        tissue = df_Gbeta_mean.loc[i, 'Tissue']
+        Gbeta[tissue] = df_Gbeta_mean.loc[i, 'Mean']
+
+    df_dna_mean = df_dna.loc[:, ['Ascan', 'AA_seq'] + col_list]
+
+    for name in col_list:
+    if not 'cDNA#Brain_Mean' in name:
+        fig, ax = plt.subplots(figsize=(11.8, 8.6))
+        x_label = 'cDNA#Brain_Mean'
+        y_label = name
+        x = np.log2(df_dna_mean[x_label]+1)
+        y = np.log2(df_dna_mean[y_label]+1)
+        xymax = max(np.max(x), np.max(y)) + 1 #xとyの最大値を定義
+        ax.set_xlim([0, xymax])
+        ax.set_ylim([0, xymax])
+        ax.scatter(x, y, color='black', s=15.0)
+        #ax.scatter(top100_xy[x_label], top100_xy[y_label], color='red', s=2.0, label='top100')
+
+        x_name = re.compile(r'cDNA#(.*)_Mean').search(x_label).group(1)
+        y_name = re.compile(r'cDNA#(.*)_Mean').search(y_label).group(1)
+        ax.axvline(np.log2(Gbeta[x_name] * 1), color='gray', linestyle='--', label=f'{x_name}_Gbeta') # qPCRの値
+        ax.axhline(np.log2(Gbeta[y_name] * 1), color='red', linestyle='--', label=f'{y_name}_Gbeta') # qPCRの値
+
+        A = np.log2(Gbeta[y_name] * 1) / np.log2(Gbeta[x_name] * 1)
+        binwidth = 0.05 #binの値幅を定義。
+        bins = np.arange(0, xymax, binwidth) #binの個数を定義
+        ax.plot(bins, A*bins, color='gray', linestyle='--', label=f'qPCR_FC(Brain=1)={round(A, 2)}')
+        ax.plot(bins, (2*A)*bins, color='red', linestyle='--', label=f'qPCR_FC(Brain=1)={round((2*A), 2)}')
+
+        #ax.plot([0, xymax], [0, xymax], color='gray', linestyle='--', label='FC=1')
+
+        x_name = re.compile(r'cDNA#(.*)').search(x_label).group(1)
+        y_name = re.compile(r'cDNA#(.*)').search(y_label).group(1)
+        ax.set_xlabel(f'log2(({x_name})+1)', fontsize=12)
+        ax.set_ylabel(f'log2(({y_name})+1)', fontsize=12)
+        ax.legend(
+            bbox_to_anchor=(1.3, 1.0),
+            loc='upper right',
+            #borderaxespad=0,
+            fontsize=10
+        )
+
+        annotations = df_dna_mean['AA_seq'].tolist()
+        texts = [plt.text(x[i], y[i], label, ha='center', va='center') for i, label in enumerate(annotations)]
+        adjust_text(texts, arrowprops=dict(arrowstyle='->'))
+        plt.tick_params(labelsize=12)
+        #for i, label in enumerate(annotations):
+        #    arrow_dict = dict(arrowstyle='-')
+        #    ax.annotate(label, (x[i], y[i]), xytext=(x[i]+0.1, y[i]+0.2), size=10, arrowprops=arrow_dict)
+        fname = 'PG4796_cDNA_scatter_' + y_name + '.png'
+        plt.savefig('A:/PROJECT/PG4796/900_NOUHIN/report_v03_230331/Secondary_Analysis/' + fname, bbox_inches='tight')
+        plt.show()
 
 def paired_samples_dist(lotID, df, outdir, prefix):
 
